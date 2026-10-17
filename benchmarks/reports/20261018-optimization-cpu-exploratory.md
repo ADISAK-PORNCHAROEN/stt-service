@@ -32,4 +32,4 @@ The process completed successfully and all four bundles are present. No simultan
 
 ## Conversation with Kob and remaining evidence
 
-The matching full-original run is pending. Controlled repetitions for both originals, reviewed Thai/English references, names/numbers and timing review, candidate comparisons, and actual home-server evidence remain required. This report does not close OPT-01 or any dependent ticket.
+The matching full-original run started in a separate fresh process on commit `8cc973898e392c99c10e9679d74de2d04bbf0735`, after the reference/alias/report review fixes and ordinary checks. It uses the same CPU settings, two-entry manifest, cached model, and offline mode; artifacts will be under `cpu-baseline-kob` in the external evidence root. The run is still active; no completed timing result is available yet. Controlled repetitions for both originals, reviewed Thai/English references, names/numbers and timing review, candidate comparisons, and actual home-server evidence remain required. This report does not close OPT-01 or any dependent ticket.
