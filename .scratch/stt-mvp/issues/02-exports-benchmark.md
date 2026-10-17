@@ -3,7 +3,7 @@
 What to build: Derived text/subtitle artifacts and a reproducible real-recording baseline.
 Blocked by: 01.
 Status: In progress.
-Ready for agent: Cold/warm measurement complete; human text/timing review remains open.
+Ready for agent: One Thai phrase has been user-reviewed; full text/timing review remains open.
 
 Triage label: ready-for-agent
 
@@ -36,7 +36,8 @@ Use fake-engine public CLI checks for all artifacts, exporter failures and atomi
 - [x] Deterministic UTF-8 exports, empty output, rounding, and original offsets are verified.
 - [x] Export failures cannot expose a partial published bundle.
 - [x] Cold/warm methodology and actual load/inference/total/RTFx/peak-RAM observations are recorded.
-- [ ] Manual text/timing review and measurement limitations are recorded without unsupported CER/WER claims.
+- [x] One user-reviewed phrase correction and its unconfirmed timing limitation are recorded without raw transcript in Git.
+- [ ] Review Thai/English text, names, numbers, silence, segment boundaries, and original offsets across the recording; record remaining limitations without unsupported CER/WER claims.
 - [x] Appropriate ordinary checks pass; private media, transcripts, and raw reports remain external.
 
 ## Out of scope
@@ -47,4 +48,4 @@ HTTP delivery, alternative models, ground-truth creation as a prerequisite, and 
 
 Ticket 04 consumes these exporters. The cold/warm measurements were added after implementation; manual text/timing review remains the quality acceptance item.
 
-Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Cold/warm run completed on the supplied MP4; final implementation paths received separate short real-model integration checks. Human listening comparison remains pending, so quality acceptance is open.
+Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Cold/warm run completed on the supplied MP4; final implementation paths received separate short real-model integration checks. One phrase has user-confirmed wording, but its exact timing and the broader listening review remain pending, so quality acceptance is open.

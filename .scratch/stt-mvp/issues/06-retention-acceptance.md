@@ -41,7 +41,8 @@ Run the ordinary suite, Ruff lint/format, and configured type checking. Perform 
 - [x] Expired statuses/results are unavailable with consistent HTTP behavior.
 - [x] End-to-end fake-engine checks, ordinary tests, lint, format, and type checking pass with recorded commands/outcomes.
 - [x] Real MP4 cold/warm measurements are recorded with hardware, versions, conditions, and limitations.
-- [ ] Manual text/timing review is recorded against the original audio.
+- [x] A user's correction of one phrase and its unconfirmed timing limitation are recorded without raw transcript in Git.
+- [ ] Manual text/timing review across the original audio is recorded, including remaining unverified categories and limitations.
 - [x] Operator instructions and sanitized acceptance summary distinguish measured evidence from remaining gaps.
 
 ## Out of scope
@@ -52,4 +53,4 @@ Deletion of user-managed sources/results, cache eviction, new engines, public de
 
 The implementation evidence is complete for tickets 01, 03, and 05. Ticket 02's manual text/timing review remains necessary before tickets 04 and 06 can close. Home-server behavior remains unmeasured.
 
-Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Runtime, retention, lifecycle, API/worker, and opt-in real-model paths are verified. Cold/warm measurements are recorded; human listening comparison remains open.
+Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Runtime, retention, lifecycle, API/worker, and opt-in real-model paths are verified. Cold/warm measurements and one user-reviewed phrase are recorded; full text/timing acceptance remains open.
