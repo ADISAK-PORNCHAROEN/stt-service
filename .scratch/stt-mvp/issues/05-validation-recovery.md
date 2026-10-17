@@ -2,8 +2,10 @@
 
 What to build: Verified boundary, concurrency, and interruption behavior for the service.
 Blocked by: 03.
-Status: Blocked.
-Ready for agent: No; ticket 03 must be complete.
+Status: Complete.
+Ready for agent: Completed; verified implementation and regression checks.
+
+Triage label: ready-for-agent
 
 ## Problem
 
@@ -30,13 +32,13 @@ Use fake-engine public CLI/API checks plus targeted SQLite/process fault injecti
 
 ## Acceptance criteria
 
-- [ ] Every accepted media type and exact input boundary has explicit validation evidence.
-- [ ] Invalid/oversized/overlong uploads receive specified errors without retained rejected data.
-- [ ] Concurrent admission never exceeds ten queued jobs in addition to one running job.
-- [ ] Duplicate workers/claims cannot run the same work or recover a live owner's job.
-- [ ] Worker interruption and publication crash windows produce failed/interrupted outcomes, retained queued work, and no automatic retry.
-- [ ] API-only restart and long-running inference preserve accurate job state/readiness.
-- [ ] Required public behavior, concurrency/fault checks, and static checks pass with evidence.
+- [x] Every accepted media type and exact input boundary has explicit validation evidence.
+- [x] Invalid, oversized, overlong, or excessively fragmented uploads receive specified errors without retained rejected data.
+- [x] Concurrent admission never exceeds ten queued jobs in addition to one running job.
+- [x] Duplicate workers/claims cannot run the same work or recover a live owner's job.
+- [x] Worker interruption and publication crash windows produce failed/interrupted outcomes, retained queued work, and no automatic retry.
+- [x] API-only restart and long-running inference preserve accurate job state/readiness.
+- [x] Required public behavior, concurrency/fault checks, and static checks pass with evidence.
 
 ## Out of scope
 
@@ -46,4 +48,4 @@ Retention scheduling, cancellation, retry endpoints, multiple-worker operation, 
 
 Ticket 05 can proceed independently of ticket 04 after ticket 03. Ticket 06 uses its fault cases when verifying cleanup safety.
 
-Validation evidence: Pending implementation.
+Validation evidence: See [verification report](../../../docs/verification-20261017.md). Public CLI/API fake-engine checks, all supported media types and scaled boundaries, concurrency/recovery/retention regressions, Ruff and mypy pass. Real-model CLI plus separate actual HTTP/worker process smoke tests passed on the 15-second excerpt. No accuracy claim is made.

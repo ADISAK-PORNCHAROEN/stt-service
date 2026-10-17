@@ -2,8 +2,10 @@
 
 What to build: A local CLI baseline backed by a reusable transcription pipeline.
 Blocked by: None.
-Status: Planned.
-Ready for agent: Yes; approved scope has no implementation blockers.
+Status: Complete.
+Ready for agent: Completed; verified implementation and regression checks.
+
+Triage label: ready-for-agent
 
 ## Problem
 
@@ -30,12 +32,12 @@ Exercise the public CLI with a fake engine for valid Thai/English output, empty 
 
 ## Acceptance criteria
 
-- [ ] The approved CLI invocation produces validated canonical JSON through the reusable pipeline.
-- [ ] Effective Turbo CPU/INT8/four-thread settings and `timing_source=model` are recorded.
-- [ ] UTF-8 and original timestamp invariants hold, including silence and empty speech.
-- [ ] Failures return a nonzero exit without partial publication, source deletion, or result overwrite.
-- [ ] Runtime storage/cache configuration, root environment, lockfile, and verification commands are documented and usable.
-- [ ] Public CLI fake-engine checks, lint, format, and type checking pass with recorded evidence.
+- [x] The approved CLI invocation produces validated canonical JSON through the reusable pipeline.
+- [x] Effective Turbo CPU/INT8/four-thread settings and `timing_source=model` are recorded.
+- [x] UTF-8 and original timestamp invariants hold, including silence and empty speech.
+- [x] Failures return a nonzero exit without partial publication, source deletion, or result overwrite.
+- [x] Runtime storage/cache configuration, root environment, lockfile, and verification commands are documented and usable.
+- [x] Public CLI fake-engine checks, lint, format, and type checking pass with recorded evidence.
 
 ## Out of scope
 
@@ -45,4 +47,4 @@ TXT/SRT, performance conclusions, HTTP, persistence, and service lifecycle work.
 
 Tickets 02 and 03 depend on this baseline. This ticket's tests establish behavior without asserting real-model accuracy.
 
-Validation evidence: Pending implementation; no checks or model runs are claimed.
+Validation evidence: See [verification report](../../../docs/verification-20261017.md). Public CLI/API fake-engine checks, all supported media types and scaled boundaries, concurrency/recovery/retention regressions, Ruff and mypy pass. Real-model CLI plus separate actual HTTP/worker process smoke tests passed on the 15-second excerpt. No accuracy claim is made.

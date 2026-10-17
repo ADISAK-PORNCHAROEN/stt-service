@@ -2,8 +2,10 @@
 
 What to build: Asynchronous JSON transcription through a loopback API and one separate worker.
 Blocked by: 01.
-Status: Blocked.
-Ready for agent: No; ticket 01 must be complete.
+Status: Complete.
+Ready for agent: Completed; verified implementation and regression checks.
+
+Triage label: ready-for-agent
 
 ## Problem
 
@@ -30,13 +32,13 @@ Use httpx with fake-engine service seams for submission/status/JSON delivery, er
 
 ## Acceptance criteria
 
-- [ ] Loopback endpoints implement durable `202` acceptance, state polling, JSON delivery, and documented errors.
-- [ ] One separate worker serially processes jobs with one persistent model instance.
-- [ ] SQLite claims and admission preserve the ten queued plus one running limit.
-- [ ] Worker restart marks running work failed/interrupted, retains queued jobs, and never autoretries.
-- [ ] API restart cannot fail a live worker's job; ownership prevents a second worker from consuming work.
-- [ ] Health reports API/worker/model readiness accurately, including loading and stale-worker cases.
-- [ ] Success follows complete atomic publication; public fake-engine checks and required static checks pass.
+- [x] Loopback endpoints implement durable `202` acceptance, state polling, JSON delivery, and documented errors.
+- [x] One separate worker serially processes jobs with one persistent model instance.
+- [x] SQLite claims and admission preserve the ten queued plus one running limit.
+- [x] Worker restart marks running work failed/interrupted, retains queued jobs, and never autoretries.
+- [x] API restart cannot fail a live worker's job; ownership prevents a second worker from consuming work.
+- [x] Health reports API/worker/model readiness accurately, including loading and stale-worker cases.
+- [x] Success follows complete atomic publication; public fake-engine checks and required static checks pass.
 
 ## Out of scope
 
@@ -46,4 +48,4 @@ HTTP TXT/SRT, retention scheduling, public deployment, and multiple workers.
 
 Tickets 04 and 05 build on this service. Document startup/shutdown instructions and validated configuration during implementation.
 
-Validation evidence: Pending implementation; no API or worker exists by virtue of this ticket.
+Validation evidence: See [verification report](../../../docs/verification-20261017.md). Public CLI/API fake-engine checks, all supported media types and scaled boundaries, concurrency/recovery/retention regressions, Ruff and mypy pass. Real-model CLI plus separate actual HTTP/worker process smoke tests passed on the 15-second excerpt. No accuracy claim is made.

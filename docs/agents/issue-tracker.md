@@ -1,15 +1,15 @@
 # Local MVP issue tracker
 
-This file tracks implementation work locally; it is not an external issue tracker. The scope is approved, but every implementation ticket remains planned. Documentation creation is not ticket completion. Read the [specification](../../.scratch/stt-mvp/spec.md) before changing behavior and the [architecture](../../.scratch/stt-mvp/architecture.md) before choosing module boundaries. Use [CONTEXT](../../CONTEXT.md) for domain terms.
+This file tracks implementation work locally. Read the [specification](../../.scratch/stt-mvp/spec.md), [architecture](../../.scratch/stt-mvp/architecture.md), and [CONTEXT](../../CONTEXT.md) before changing behavior. Runtime implementation is present; delivery status below reflects actual evidence in the [verification report](../verification-20261017.md), not merely code existence.
 
 | Ticket | What to build | Blocked by | Status | Ready for agent |
 | --- | --- | --- | --- | --- |
-| [01](../../.scratch/stt-mvp/issues/01-cli-json.md) | CLI and reusable JSON pipeline | None | Planned | Yes |
-| [02](../../.scratch/stt-mvp/issues/02-exports-benchmark.md) | TXT/SRT and measured baseline | 01 | Blocked | No |
-| [03](../../.scratch/stt-mvp/issues/03-api-worker-json.md) | Local API, SQLite queue, persistent worker, JSON | 01 | Blocked | No |
-| [04](../../.scratch/stt-mvp/issues/04-api-exports.md) | TXT/SRT result delivery over HTTP | 02, 03 | Blocked | No |
-| [05](../../.scratch/stt-mvp/issues/05-validation-recovery.md) | Validation, queue admission, restart hardening | 03 | Blocked | No |
-| [06](../../.scratch/stt-mvp/issues/06-retention-acceptance.md) | Retention and full acceptance evidence | 04, 05 | Blocked | No |
+| [01](../../.scratch/stt-mvp/issues/01-cli-json.md) | CLI and reusable JSON pipeline | None | Complete | Done |
+| [02](../../.scratch/stt-mvp/issues/02-exports-benchmark.md) | TXT/SRT and measured baseline | 01 | In progress | Listening review pending |
+| [03](../../.scratch/stt-mvp/issues/03-api-worker-json.md) | Local API, SQLite queue, persistent worker, JSON | 01 | Complete | Done |
+| [04](../../.scratch/stt-mvp/issues/04-api-exports.md) | TXT/SRT result delivery over HTTP | 02, 03 | In progress | HTTP verified; awaits 02 acceptance |
+| [05](../../.scratch/stt-mvp/issues/05-validation-recovery.md) | Validation, queue admission, restart hardening | 03 | Complete | Done |
+| [06](../../.scratch/stt-mvp/issues/06-retention-acceptance.md) | Retention and full acceptance evidence | 04, 05 | In progress | Runtime verified; listening review pending |
 
 After 01, 02 and 03 may proceed independently. After 03, 05 may proceed alongside remaining export work. Start 04 only after both 02 and 03 pass; start 06 only after both 04 and 05 pass.
 

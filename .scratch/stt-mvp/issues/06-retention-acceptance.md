@@ -2,8 +2,10 @@
 
 What to build: Safe API data expiry and end-to-end acceptance evidence.
 Blocked by: 04, 05.
-Status: Blocked.
-Ready for agent: No; tickets 04 and 05 must both be complete.
+Status: In progress.
+Ready for agent: Runtime acceptance verified; human text/timing review remains open.
+
+Triage label: ready-for-agent
 
 ## Problem
 
@@ -33,13 +35,14 @@ Run the ordinary suite, Ruff lint/format, and configured type checking. Perform 
 
 ## Acceptance criteria
 
-- [ ] Startup and hourly cleanup enforce every success/failure retention clock at the exact boundary.
-- [ ] Queued/running jobs, active result access, user-owned CLI artifacts, caches, and environment are protected.
-- [ ] Inactive staging/orphans are reclaimed safely and cleanup tolerates/retries partial failures.
-- [ ] Expired statuses/results are unavailable with consistent HTTP behavior.
-- [ ] End-to-end fake-engine checks, ordinary tests, lint, format, and type checking pass with recorded commands/outcomes.
-- [ ] Real MP4 measurements and manual text/timing review are recorded with hardware, versions, conditions, and limitations.
-- [ ] Operator instructions and sanitized acceptance summary distinguish measured evidence from remaining gaps.
+- [x] Startup and hourly cleanup enforce every success/failure retention clock at the exact boundary.
+- [x] Queued/running jobs, active result access, user-owned CLI artifacts, caches, and environment are protected.
+- [x] Inactive staging/orphans are reclaimed safely and cleanup tolerates/retries partial failures.
+- [x] Expired statuses/results are unavailable with consistent HTTP behavior.
+- [x] End-to-end fake-engine checks, ordinary tests, lint, format, and type checking pass with recorded commands/outcomes.
+- [x] Real MP4 cold/warm measurements are recorded with hardware, versions, conditions, and limitations.
+- [ ] Manual text/timing review is recorded against the original audio.
+- [x] Operator instructions and sanitized acceptance summary distinguish measured evidence from remaining gaps.
 
 ## Out of scope
 
@@ -47,6 +50,6 @@ Deletion of user-managed sources/results, cache eviction, new engines, public de
 
 ## Further notes
 
-Completing acceptance requires actual implementation evidence for all six tickets. This planning document makes no completion or test-pass claim; home-server behavior remains unverified until measured there.
+The implementation evidence is complete for tickets 01, 03, and 05. Ticket 02's manual text/timing review remains necessary before tickets 04 and 06 can close. Home-server behavior remains unmeasured.
 
-Validation evidence: Pending implementation and acceptance execution.
+Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Runtime, retention, lifecycle, API/worker, and opt-in real-model paths are verified. Cold/warm measurements are recorded; human listening comparison remains open.

@@ -2,8 +2,10 @@
 
 What to build: HTTP access to the same completed text/subtitle artifacts as the CLI.
 Blocked by: 02, 03.
-Status: Blocked.
-Ready for agent: No; tickets 02 and 03 must both be complete.
+Status: In progress.
+Ready for agent: Implementation present; measurement/quality acceptance remains open.
+
+Triage label: ready-for-agent
 
 ## Problem
 
@@ -28,11 +30,11 @@ Use httpx and a counting fake engine to verify all three formats, content types/
 
 ## Acceptance criteria
 
-- [ ] Result requests support JSON/TXT/SRT with the specified default and response semantics.
-- [ ] CLI and API share canonical exporters and consistent output.
-- [ ] Fetching any number of formats does not rerun inference.
-- [ ] Export failure prevents success and partial publication.
-- [ ] HTTP seam checks and required lint/format/type checks pass with evidence.
+- [x] Result requests support JSON/TXT/SRT with the specified default and response semantics.
+- [x] CLI and API share canonical exporters and consistent output.
+- [x] Fetching any number of formats does not rerun inference.
+- [x] Export failure prevents success and partial publication.
+- [x] HTTP seam checks and required lint/format/type checks pass with evidence.
 
 ## Out of scope
 
@@ -42,4 +44,4 @@ New export formats, regenerated transcripts, UI, retention, and alternate engine
 
 Ticket 06 requires this ticket and ticket 05. Results remain model-timed rather than manually aligned.
 
-Validation evidence: Pending implementation.
+Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). JSON/TXT/SRT delivery through the API and actual separate API/worker processes are verified. Cold/warm CPU measurements are recorded; this ticket remains open until its benchmark dependency 02 completes human review.

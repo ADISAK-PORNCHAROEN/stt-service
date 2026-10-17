@@ -1,39 +1,30 @@
 # Repository Guidelines
 
-## Current State & Project Structure
+## Project Structure
 
-This workspace contains planning documents and a user-provided MP4; application code, manifests, and tests do not exist yet. Read `STT-HANDOFF.md` for background. The agreed MVP uses Whisper Turbo for Thai/English transcription: CPU INT8, four threads, and segment timestamps.
+This Python 3.12 project transcribes Thai/English with Whisper Turbo on CPU. Code is in `src/stt_services/`, tests in `tests/`, and sanitized measurements in `benchmarks/reports/`. Before changing behavior, read `.scratch/stt-mvp/spec.md`, `.scratch/stt-mvp/architecture.md`, and `docs/agents/issue-tracker.md`. `STT-HANDOFF.md` is background; `CONTEXT.md` defines project terms.
 
-Use the planned `src/stt_services/` package, `tests/`, and `benchmarks/reports/`. Separate CLI, configuration, schemas, pipeline, engine, and exporters. CLI and the API worker share the pipeline. Add a localhost-only FastAPI interface, SQLite queue, and one separate worker after the CLI baseline works.
+## Setup and Development Commands
 
-Store the agreed spec, architecture, and dependency-ordered tickets under `.scratch/stt-mvp/` when created. Planned paths and commands are not existing implementation.
+Use uv and the root `.venv`. Set `HF_HOME`, `UV_CACHE_DIR`, and `STT_DATA_DIR` outside the repository. Run commands from the root:
 
-## Environment & Development Commands
+- `uv sync --locked` installs the pinned environment.
+- `uv run stt transcribe <file> --output-dir <new-directory>` writes JSON, TXT, and SRT.
+- `uv run stt benchmark <file> --output-dir <new-directory>` measures cold and warm runs.
+- `uv run stt serve --port 8000` and `uv run stt worker` start the API and persistent worker in separate terminals.
+- `uv run pytest` runs the ordinary suite with fake inference; integration tests are excluded by default.
+- `uv run ruff check .`, `uv run ruff format --check .`, and `uv run mypy` lint, check formatting, and check production types.
 
-Use Python 3.12 and uv with the repository-root `.venv` as the primary environment. Commit `uv.lock` once generated. After scaffolding, support:
+For real-model acceptance, set `STT_TEST_MEDIA` to a local recording and run `uv run pytest -m integration tests/test_real_model.py tests/test_http_real.py -v`. This uses Whisper weights and launches local service processes.
 
-- `uv sync` — install locked dependencies.
-- `uv run stt transcribe <file> --output-dir <directory>` — transcribe locally.
-- `uv run pytest` — run ordinary tests without models.
-- `uv run ruff check .` — lint code.
-- `uv run ruff format --check .` — verify formatting.
+## Style and Testing
 
-These commands are not configured yet. Use faster-whisper; this backend does not require PyTorch.
+Use four-space indentation, type hints, `snake_case` modules/functions, and `PascalCase` classes. Keep Thai UTF-8. Preserve the split between CLI/API, media validation, shared pipeline, engine, persistence, and exporters. JSON is canonical; derive TXT/SRT from it. Segment times follow the original recording timeline.
 
-## Coding Style & Contracts
+Name tests `test_*.py`. Cover CLI/API behavior with fake inference plus real filesystem/SQLite interactions; use real-model tests for engine contracts. No coverage threshold is set. Benchmark reports include hardware, versions, cold/warm timing, RTFx, and peak memory. Report CER/WER only against reviewed reference text with documented normalization and tokenization.
 
-Use four-space indentation, type hints, snake_case functions/modules, and PascalCase classes. Use Ruff and preserve UTF-8 Thai text.
+## Contributions and Data
 
-Keep inference independent of HTTP and persistence. Use JSON as the canonical transcript; derive TXT/SRT without rerunning inference. Timestamps reference the original recording in seconds. Preserve source files and publish only complete outputs.
+The initial commit uses `docs:`. Use concise imperative prefixes such as `feat:`, `fix:`, `test:`, and `docs:`. Pull requests state scope, validation, evidence, and limitations; update the spec/tracker when decisions change.
 
-## Testing Guidelines
-
-Use pytest and httpx with `test_*.py` names. Exercise CLI/API behavior using a fake engine; separate real-model integration tests. Cover timestamps, exports, invalid uploads, queue limits, interrupted jobs, and cleanup. No coverage threshold is established.
-
-Use the supplied MP4 for initial manual evaluation. Report hardware, versions, cold/warm timings, RTFx, and peak RAM. Report CER/WER only with reviewed reference text and documented normalization/tokenization.
-
-## Contributions & Data
-
-No Git history is available. Use imperative commit subjects; describe scope, validation, and limitations in pull requests.
-
-Keep models, caches, API uploads, databases, and results under configurable `D:\ai-stt\` storage, except `.venv`. Set `HF_HOME` and `UV_CACHE_DIR` before downloads. Exclude private media, transcripts, credentials, and generated artifacts from version control.
+Keep model weights, caches, uploads, databases, transcripts, and credentials outside Git, usually under `D:\ai-stt\`. Preserve sources and existing outputs; CLI destinations must be new and outside managed jobs/cache/lock paths. Update `uv.lock` with dependencies; retain `av<19` until faster-whisper supports newer PyAV.
