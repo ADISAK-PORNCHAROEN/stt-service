@@ -32,4 +32,13 @@ The process completed successfully and all four bundles are present. No simultan
 
 ## Conversation with Kob and remaining evidence
 
-The matching full-original run started in a separate fresh process on commit `8cc973898e392c99c10e9679d74de2d04bbf0735`, after the reference/alias/report review fixes and ordinary checks. It uses the same CPU settings, two-entry manifest, cached model, and offline mode; artifacts will be under `cpu-baseline-kob` in the external evidence root. The run is still active; no completed timing result is available yet. Controlled repetitions for both originals, reviewed Thai/English references, names/numbers and timing review, candidate comparisons, and actual home-server evidence remain required. This report does not close OPT-01 or any dependent ticket.
+The matching full-original run completed in a separate fresh process on commit `8cc973898e392c99c10e9679d74de2d04bbf0735`, after the reference/alias/report review fixes and ordinary checks. It used the same CPU settings, two-entry manifest, cached model, and offline mode. The process exited successfully; all four JSON/TXT/SRT bundles and `evaluation.json` are under external `cpu-baseline-kob`.
+
+| Call | Full-call seconds | RTFx | Approx. other CPU seconds | Peak RSS bytes |
+| --- | ---: | ---: | ---: | ---: |
+| Cold | 1,033.993 | 0.578 | 2,281.250 | 1,983,344,640 |
+| Warm 1 | 1,164.670 | 0.513 | 3,193.547 | 1,650,655,232 |
+| Warm 2 | 1,196.164 | 0.500 | 3,543.062 | 1,506,537,472 |
+| Warm 3 | 1,086.004 | 0.551 | 2,685.375 | 1,499,676,672 |
+
+Warm median: **1,164.670 seconds**; range: **1,086.004–1,196.164 seconds**; median full-call RTFx: **0.513**. The real-time target was not met. The approximate other-system CPU counters are substantial and cannot identify a specific competing process or prove isolation, so this remains exploratory timing. Accuracy is pending because no reviewed reference is recorded. Controlled repetitions on a verified idle host, reviewed Thai/English references, names/numbers and timing review, candidate comparisons, and actual home-server evidence remain required. This report does not close OPT-01 or any dependent ticket.
