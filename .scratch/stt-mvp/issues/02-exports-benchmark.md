@@ -2,8 +2,8 @@
 
 What to build: Derived text/subtitle artifacts and a reproducible real-recording baseline.
 Blocked by: 01.
-Status: In progress.
-Ready for agent: Two Thai phrases have been user-reviewed; full text/timing review remains open.
+Status: Complete.
+Ready for agent: Done; owner accepted two phrase-level examples with the broader-review gap disclosed.
 
 Triage label: ready-for-agent
 
@@ -37,7 +37,7 @@ Use fake-engine public CLI checks for all artifacts, exporter failures and atomi
 - [x] Export failures cannot expose a partial published bundle.
 - [x] Cold/warm methodology and actual load/inference/total/RTFx/peak-RAM observations are recorded.
 - [x] Two user-reviewed phrase corrections and their model-derived timing limitations are recorded without raw transcript in Git.
-- [ ] Review Thai/English text, names, numbers, silence, segment boundaries, and original offsets across the recording; record remaining limitations without unsupported CER/WER claims.
+- [x] Owner-directed closure records the two phrase-level text corrections, defers full-recording text/timing review explicitly, and makes no CER/WER or overall accuracy claim.
 - [x] Appropriate ordinary checks pass; private media, transcripts, and raw reports remain external.
 
 ## Out of scope
@@ -46,6 +46,6 @@ HTTP delivery, alternative models, ground-truth creation as a prerequisite, and 
 
 ## Further notes
 
-Ticket 04 consumes these exporters. The cold/warm measurements were added after implementation; manual text/timing review remains the quality acceptance item.
+Ticket 04 consumes these exporters. Owner decision (2026-10-17): close this ticket based on the completed exports/benchmark and two user-reviewed phrase corrections, with the remaining full-recording review gap explicitly retained. This limited-sample acceptance does not mean all Thai/English text, names, numbers, silence, boundaries, or original offsets were reviewed.
 
-Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Cold/warm run completed on the supplied MP4; final implementation paths received separate short real-model integration checks. Two phrases have user-confirmed wording, but exact timing and the broader listening review remain pending, so quality acceptance is open.
+Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Cold/warm run completed on the supplied MP4; final implementation paths received separate short real-model integration checks. Ticket closed at the owner's direction with two user-reviewed phrase corrections; exact timing and broader listening review remain unverified, so no overall transcription-quality claim is made.

@@ -9,8 +9,9 @@ The initial documentation baseline is Git `19a6f22`. Private recordings, raw
 transcripts, databases, model weights and test artifacts remain outside Git.
 
 Engineering checks below are complete. Full-recording cold/warm measurement is
-complete, and two user-reviewed phrase corrections are recorded. Full text/timing
-review remains open; neither a partial review nor the measurements establish a
+complete, and two user-reviewed phrase corrections are recorded. The owner
+directed ticket 02 to close on this limited sample; full text/timing review
+remains open, and neither the partial review nor measurements establish a
 numerical accuracy pass.
 
 ## Commands and observed evidence
@@ -111,6 +112,7 @@ testing is outside this deliberately localhost-only, session-free MVP.
   interval remain model-derived. The rest of the recording and full checks of
   Thai/English wording, names, numbers, silence, boundaries, and original offsets
   remain unreviewed. Raw wording and audio stay in a private review note outside
-  Git.
+  Git. Ticket 02 was closed by owner direction with this limitation retained;
+  ticket 06 still awaits full-recording review for final MVP acceptance.
 - No reviewed reference text exists, so CER/WER and numerical accuracy claims
   are intentionally absent. Home-server performance remains unmeasured.

@@ -2,8 +2,8 @@
 
 What to build: HTTP access to the same completed text/subtitle artifacts as the CLI.
 Blocked by: 02, 03.
-Status: Blocked.
-Ready for agent: HTTP behavior is verified; waiting for ticket 02 acceptance.
+Status: Complete.
+Ready for agent: Done; HTTP acceptance was verified and dependency 02 is closed with its limitation recorded.
 
 Triage label: ready-for-agent
 
@@ -42,6 +42,6 @@ New export formats, regenerated transcripts, UI, retention, and alternate engine
 
 ## Further notes
 
-Ticket 06 requires this ticket and ticket 05. Results remain model-timed rather than manually aligned.
+Ticket 06 requires this ticket and ticket 05. Results remain model-timed rather than manually aligned. Ticket 02 was closed by owner direction using two phrase-level review samples; that does not establish full-recording text/timing accuracy.
 
-Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). JSON/TXT/SRT delivery through the API and actual separate API/worker processes are verified. Cold/warm CPU measurements are recorded; this ticket remains open until its benchmark dependency 02 completes human review.
+Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). JSON/TXT/SRT delivery through the API and actual separate API/worker processes are verified. All ticket 04 acceptance criteria pass; dependency 02 has been closed by owner direction with its broader-review limitation retained.

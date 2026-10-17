@@ -3,7 +3,7 @@
 What to build: Safe API data expiry and end-to-end acceptance evidence.
 Blocked by: 04, 05.
 Status: Blocked.
-Ready for agent: Runtime acceptance is verified; waiting for tickets 02 and 04 acceptance.
+Ready for agent: Runtime acceptance is verified; full-recording owner text/timing review remains outstanding.
 
 Triage label: ready-for-agent
 
@@ -51,6 +51,6 @@ Deletion of user-managed sources/results, cache eviction, new engines, public de
 
 ## Further notes
 
-The implementation evidence is complete for tickets 01, 03, and 05. Ticket 02's manual text/timing review remains necessary before tickets 04 and 06 can close. Home-server behavior remains unmeasured.
+Tickets 01–05 are complete. Ticket 02 was closed by owner direction using two phrase-level review samples, with the remaining full-recording review gap documented. Ticket 06 still requires broader manual text/timing review before final MVP acceptance. Home-server behavior remains unmeasured.
 
-Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Runtime, retention, lifecycle, API/worker, and opt-in real-model paths are verified. Cold/warm measurements and two user-reviewed phrases are recorded; full text/timing acceptance remains open.
+Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Runtime, retention, lifecycle, API/worker, and opt-in real-model paths are verified. Cold/warm measurements and two user-reviewed phrases are recorded; full-recording text/timing acceptance remains open.
