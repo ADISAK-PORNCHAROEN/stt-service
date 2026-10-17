@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from stt_services.benchmark import benchmark
+from stt_services.comparison import compare_evaluations
 from stt_services.config import Settings
 from stt_services.engines.whisper import WhisperEngine
 from stt_services.evaluation import (
@@ -14,6 +15,7 @@ from stt_services.evaluation import (
     authorize_media,
     evaluate,
     prepare_references,
+    rescore_saved_results,
 )
 from stt_services.pipeline import EngineFactory, Pipeline
 
@@ -39,6 +41,18 @@ def main(
     evaluation.add_argument("--output-dir", type=Path, required=True)
     evaluation.add_argument("--prepare-references", action="store_true")
     evaluation.add_argument(
+        "--rescore-results",
+        type=Path,
+        help="Rescore explicitly bound saved transcript bundles without inference",
+    )
+    comparison = commands.add_parser(
+        "compare", help="Compare recorded baseline/candidate evaluations without inference"
+    )
+    comparison.add_argument("--baseline", type=Path, action="append", required=True)
+    comparison.add_argument("--candidate", type=Path, action="append", required=True)
+    comparison.add_argument("--review", type=Path, action="append", default=[])
+    comparison.add_argument("--output-dir", type=Path, required=True)
+    evaluation.add_argument(
         "--recording", help="Select one authorized original; manifest stays explicit"
     )
     serve = commands.add_parser("serve", help="Serve the job API on 127.0.0.1")
@@ -49,9 +63,22 @@ def main(
         settings = Settings()
         if args.command == "evaluate":
             _validate_output(args.output_dir, settings)
+            if args.prepare_references and args.rescore_results:
+                raise ValueError(
+                    "Reference preparation and offline rescoring are separate operations"
+                )
             if args.prepare_references:
                 prepare_references(args.manifest, args.output_dir, catalog=recording_catalog)
                 return 0
+            if args.rescore_results:
+                rescore_saved_results(
+                    args.manifest,
+                    args.rescore_results,
+                    args.output_dir,
+                    catalog=recording_catalog,
+                )
+                return 0
+            settings.resolve_profile()
             evaluate(
                 args.manifest,
                 args.output_dir,
@@ -59,6 +86,16 @@ def main(
                 engine_factory,
                 catalog=recording_catalog,
                 recording_id=args.recording,
+            )
+            return 0
+        if args.command == "compare":
+            _validate_output(args.output_dir, settings)
+            compare_evaluations(
+                args.baseline,
+                args.candidate,
+                args.review,
+                args.output_dir,
+                catalog=recording_catalog,
             )
             return 0
         if args.command == "serve":
@@ -71,10 +108,12 @@ def main(
         if args.command == "worker":
             from stt_services.worker import Worker
 
+            settings.resolve_profile()
             logging.basicConfig(level=logging.INFO)
             with Worker(settings, engine_factory) as worker:
                 worker.run_forever()
             return 0
+        settings.resolve_profile()
         media = authorize_media(args.file, recording_catalog) if args.approved_only else None
         source = media.source if media else args.file
         if args.command == "benchmark":
@@ -84,6 +123,9 @@ def main(
                 args.output_dir,
                 Pipeline(settings, engine_factory),
                 source_guard=media.assert_unchanged if media else None,
+                source_sha256=media.approved.source_sha256 if media else None,
+                recording_id=media.approved.id if media else None,
+                role=media.approved.role if media else None,
             )
             return 0
         _validate_output(args.output_dir, settings)
@@ -91,6 +133,7 @@ def main(
             source,
             args.output_dir,
             source_guard=media.assert_unchanged if media else None,
+            source_sha256=media.approved.source_sha256 if media else None,
         )
         print(f"Saved {len(transcript.segments)} segments to {args.output_dir}")
         return 0

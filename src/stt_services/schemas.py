@@ -19,10 +19,19 @@ class Segment:
             raise ValueError("Invalid segment time range")
 
 
+@dataclass(frozen=True)
+class EngineResult:
+    segments: list[Segment]
+    effective_configuration: dict[str, object]
+    observations: dict[str, object] = field(default_factory=dict)
+
+
 @dataclass
 class RunMetrics:
+    validation_seconds: float = 0
     model_load_seconds: float = 0
     inference_seconds: float = 0
+    publication_seconds: float = 0
     total_seconds: float = 0
     peak_ram_bytes: int = 0
     rtfx_total: float = 0
@@ -40,6 +49,7 @@ class Transcript:
     engine: str = "faster-whisper"
     configuration: dict[str, object] = field(default_factory=dict)
     versions: dict[str, str] = field(default_factory=dict)
+    source_sha256: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         result = asdict(self)

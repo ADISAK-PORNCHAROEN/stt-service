@@ -9,6 +9,13 @@ from typing import Literal, Self, cast
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 from rapidfuzz.distance import Levenshtein
 
+SCORING_POLICY_ID = "nfc-casefold-projections-v1"
+SCORING_POLICY_DESCRIPTION = (
+    "NFC; case-fold; normalize curly apostrophe; replace other punctuation/symbols with "
+    "spaces; collapse whitespace; Thai CER counts Thai-script code points including marks; "
+    "English WER counts ASCII words with internal apostrophes; numeric tokens are separate."
+)
+
 
 class ReferenceCue(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -151,13 +158,20 @@ def score_reference(
     )
     return {
         "status": "scored",
+        "scoring_policy_id": SCORING_POLICY_ID,
         "normalization": reference.normalization,
         "thai_cer": thai["rate"],
         "english_wer": english["rate"],
         "thai": thai,
         "english": english,
         "raw_full_cer": error_measure(spoken, hypothesis)["rate"],
-        "normalized_full_cer": error_measure(normalized_reference, normalized_hypothesis)["rate"],
+        "raw_full_text": error_measure(list(spoken), list(hypothesis)),
+        "normalized_full_cer": error_measure(
+            list(normalized_reference), list(normalized_hypothesis)
+        )["rate"],
+        "normalized_full_text": error_measure(
+            list(normalized_reference), list(normalized_hypothesis)
+        ),
         "numeric_tokens": error_measure(
             re.findall(r"\d+(?:\.\d+)?", normalized_reference),
             re.findall(r"\d+(?:\.\d+)?", normalized_hypothesis),
@@ -167,6 +181,12 @@ def score_reference(
         "reviewed_at": reference.reviewed_at.isoformat(),
         "important_error_review": "pending",
         "timing_review": "pending",
+        "reference_important_error_review": "reviewed"
+        if reference.important_errors_reviewed
+        else "pending",
+        "reference_timing_review": "reviewed"
+        if all(cue.timing_reviewed for cue in reference.cues)
+        else "pending",
         "limitations": "Thai-character and English-word projections; numeric tokens reported "
         "separately. Full-text error and manual important-error review are required to detect "
         "cross-language ordering errors. No standalone English-only accuracy claim.",
@@ -182,6 +202,11 @@ def summarize_quality(reports: Sequence[dict[str, object]]) -> dict[str, object]
         values = [cast(float, report[measure]) for report in reports if report[measure] is not None]
         summary[measure] = max(values) if values else None
     for measure in ("thai", "english", "numeric_tokens"):
+        summary[measure] = max(
+            (cast(dict[str, object], report[measure]) for report in reports),
+            key=lambda item: cast(int, item["errors"]),
+        )
+    for measure in ("raw_full_text", "normalized_full_text"):
         summary[measure] = max(
             (cast(dict[str, object], report[measure]) for report in reports),
             key=lambda item: cast(int, item["errors"]),

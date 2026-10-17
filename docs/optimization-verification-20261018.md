@@ -47,6 +47,38 @@ Applied the security contract's source/control/sink tracing, changed-boundary re
 
 The review excludes unrelated pre-existing dirty work and future implementation. No new authentication/session/cryptographic boundary is introduced. Native dependency internals, advisory feeds, runtime ACLs, and unsupported public hosting were not audited. No selected source read was unavailable. This result certifies neither the whole repository nor real quality/performance acceptance.
 
+## Follow-up implementation pass
+
+The approved software foundation now spans all six OPT tickets. The additions are present in the working tree; tracker statuses remain In progress/Blocked because real acceptance gates are not met. This pass performed no real-model inference and used no recording. It does not change or upgrade the exploratory CPU measurements documented below.
+
+Implemented software contracts include:
+
+- `stt evaluate --rescore-results` verifies previously saved result bundles offline and reports `inference_performed: false`; a source/result/reference mismatch or inconsistent canonical JSON/TXT/SRT bundle is rejected.
+- Startup settings resolve to an immutable versioned profile shared by CLI and worker. Result metadata separates requested/effective configuration and per-recording observations; private prompt/hotword contents are represented by hashes.
+- Whisper supports explicit CPU/CUDA and sequential/batched paths, with no silent device fallback, runtime-reported effective settings, and explicit unsupported/ignored-option evidence.
+- Batched startup profiles reject disabled VAD until full-file clip timestamps are explicitly supported; the pinned batched API does not provide the sequential path's default full-file clip range for long recordings.
+- Evaluation records plan/profile/source/result/text identities and stage timing. `stt compare` builds an offline report with repeated-run timing, resource observations, reference-unit counts, text variability, quality/review gates, and pending dispositions; it does not promote a profile.
+- Worker lifecycle tests cover profile stability across a failed job. GPU capability discovery is kept distinct from model load and completed inference.
+- Comparison rejects repeated evaluation reports and duplicate saved-result hashes, so the same artifact cannot meet the three-warm-run gate by repetition. Baseline/candidate overlap is also rejected.
+- The comparison carries the evaluator's approximate per-run other-CPU activity into the summary and requires a hash-bound human host-isolation review for every warm run. Missing activity evidence or a pending review remains pending; reported contention blocks acceptance.
+
+Latest engineering checks after review fixes:
+
+| Command | Observed outcome |
+| --- | --- |
+| `uv run --env-file .env.local pytest` | 113 passed, 2 integration tests deselected, in 9.91 seconds |
+| `uv run --env-file .env.local pytest tests/test_comparison.py tests/test_evaluation.py -q` | 24 passed after review fixes |
+| `uv run --env-file .env.local mypy` | Passed, 17 production source files |
+| `uv run --env-file .env.local ruff check .` | Passed |
+| `uv run --env-file .env.local ruff format --check .` | Passed, 67 files |
+| `git diff --check` | Passed; only Git line-ending normalization notices were printed |
+
+These are software checks, not runtime/accuracy acceptance. The two integration tests were deselected; they were not run against any audio. Reference drafts still need human speech and boundary review; idle-host CPU repeats, CUDA model loading/transcription, batch/language/hint comparisons, home-server evidence, and full persistent-service configuration acceptance remain open. The verification report and ticket checkboxes distinguish those gates from the implementation checks.
+
+The spec re-review confirmed duplicate-run rejection and the host-isolation gate. It also identified that faster-whisper 1.2.1's batched API does not inherit the sequential API's default full-file clip range when VAD is disabled. Profile resolution now rejects batched/VAD-off settings before inference; a regression test was observed failing before the guard and passing after it. This source-level check used no recording and performed no model inference.
+
+The final Codex Security diff scan (`da687d8e-e682-4b46-a414-ed4e0c489cda`) completed with zero reportable findings and complete static coverage of the nine changed production source files. Changed tests were also reviewed for generated-only fixtures and inference guards. Its immutable source snapshot is `codex-security-snapshot/v1:sha256:6d965acb9ebf9b495554c5f19ef0d37bc44e9237bbbe0803bd434a78fdc4ff40`; preflight capability results were reused from the same session because configuration had not changed. The scan ran no runtime service, model, or audio. The sealed [security report](<C:/Users/computer/.codex/state/plugins/codex-security/scans/stt-services/92b62f98114e99c40bcb9d4b415d2b6a5412b89c_20261017T220301Z_bibq9k2a/report.md>) is stored outside the repository.
+
 ## Real measurements and pending acceptance
 
 External artifacts are under `D:\ai-stt\output\optimization-20261018-015630`. The source snapshot and hashes identify the implementation used for the first CPU baseline process. The approved two-entry manifest and separate reference-review drafts are in that external location.

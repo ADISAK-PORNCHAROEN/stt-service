@@ -94,6 +94,13 @@ def test_evaluation_publishes_cold_and_three_warm_bundles_without_accuracy_claim
         == 0
     )
     report = json.loads((output / "evaluation.json").read_text(encoding="utf-8"))
+    plan = json.loads((output / "experiment-plan.json").read_text(encoding="utf-8"))
+    review_template = json.loads((output / "review-template.json").read_text(encoding="utf-8"))
+    assert report["plan_id"] == plan["plan_id"]
+    assert report["profile_id"] == plan["profile_id"]
+    assert len(review_template["reviews"]) == 8
+    assert all(not review["important_errors_reviewed"] for review in review_template["reviews"])
+    assert all(not review["timing_reviewed"] for review in review_template["reviews"])
     assert len(report["recordings"]) == 2
     assert report["hardware"]["physical_cpus"] >= 1
     assert report["hardware"]["logical_cpus"] >= report["hardware"]["physical_cpus"]
@@ -106,6 +113,11 @@ def test_evaluation_publishes_cold_and_three_warm_bundles_without_accuracy_claim
             "warm",
             "warm",
         ]
+        assert all(run["source_sha256"] == recording["source_sha256"] for run in recording["runs"])
+        assert all(run["profile_id"] == report["profile_id"] for run in recording["runs"])
+        assert all(run["result_json_sha256"] for run in recording["runs"])
+        assert recording["runs"][0]["text_diff_from_previous_run"] is None
+        assert "full_call_through_publication_seconds" in recording["runs"][0]["stage_timings"]
         assert recording["quality"] == {
             "status": "pending_review",
             "thai_cer": None,
@@ -604,3 +616,147 @@ def test_evaluation_quality_summary_keeps_a_regression_from_an_earlier_warm_run(
         assert recording["quality"]["thai_cer"] == pytest.approx(1 / 3)
         assert recording["quality"]["english_wer"] == 1
         assert "worst" in recording["quality_aggregation"]
+
+
+def test_saved_results_can_be_rescored_without_constructing_inference(
+    tmp_path, evaluation_inputs, capsys
+):
+    manifest, catalog = evaluation_inputs
+    references = tmp_path / "references"
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(manifest),
+                "--output-dir",
+                str(references),
+                "--prepare-references",
+            ],
+            recording_catalog=catalog,
+        )
+        == 0
+    )
+    prepared_manifest = references / "manifest.json"
+    for reference_path in references.glob("*.reference.json"):
+        reference = json.loads(reference_path.read_text(encoding="utf-8"))
+        reference["reviewed_by"] = "Fixture reviewer"
+        reference["reviewed_at"] = "2026-10-18T00:00:00Z"
+        for cue in reference["cues"]:
+            cue.update(text="Hello Apple สวัสดี Apple", reviewed=True, uncertain=False)
+        reference_path.write_text(json.dumps(reference, ensure_ascii=False), encoding="utf-8")
+
+    class FakeEngine:
+        def transcribe(self, path):
+            return [Segment(0.125, 0.875, "Hello Apple สวัสดี Apple")]
+
+    saved_results = tmp_path / "saved-results"
+    assert (
+        main(
+            ["evaluate", "--manifest", str(prepared_manifest), "--output-dir", str(saved_results)],
+            recording_catalog=catalog,
+            engine_factory=lambda configured: FakeEngine(),
+        )
+        == 0
+    )
+    bindings_path = saved_results / "evaluation.json"
+    legacy_bindings_path = tmp_path / "saved-result-bindings.json"
+    legacy_bindings_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "results": [
+                    {
+                        "recording_id": recording_id,
+                        "source_sha256": approved.source_sha256,
+                        "transcript_json": str(
+                            saved_results / recording_id / "03-warm" / "transcript.json"
+                        ),
+                    }
+                    for recording_id, approved in zip(
+                        (item.id for item in catalog), catalog, strict=True
+                    )
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def forbidden_engine(configured):
+        raise AssertionError("Offline rescoring must not construct an inference engine")
+
+    rescored = tmp_path / "rescored"
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(prepared_manifest),
+                "--rescore-results",
+                str(bindings_path),
+                "--output-dir",
+                str(rescored),
+            ],
+            recording_catalog=catalog,
+            engine_factory=forbidden_engine,
+        )
+        == 0
+    )
+    report = json.loads((rescored / "comparison.json").read_text(encoding="utf-8"))
+    assert report["binding_format"] == "evaluation_run_records"
+    assert len(report["results"]) == 8
+    assert all(item["quality"]["status"] == "scored" for item in report["results"])
+    assert all(item["source_binding"] == "transcript_source_sha256" for item in report["results"])
+    assert all(item["plan_id"] for item in report["results"])
+    bundle = saved_results / catalog[0].id / "03-warm"
+    assert (bundle / "transcript.json").is_file()
+    assert (
+        json.loads((bundle / "transcript.json").read_text(encoding="utf-8"))["source_sha256"]
+        == catalog[0].source_sha256
+    )
+
+    invalid_bindings = json.loads(legacy_bindings_path.read_text(encoding="utf-8"))
+    invalid_bindings["results"][0]["source_sha256"] = "0" * 64
+    mismatched_binding = tmp_path / "mismatched-binding.json"
+    mismatched_binding.write_text(json.dumps(invalid_bindings), encoding="utf-8")
+    rejected = tmp_path / "mismatched-rescore"
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(prepared_manifest),
+                "--rescore-results",
+                str(mismatched_binding),
+                "--output-dir",
+                str(rejected),
+            ],
+            recording_catalog=catalog,
+            engine_factory=forbidden_engine,
+        )
+        == 1
+    )
+    assert "source hash" in capsys.readouterr().err.lower()
+    assert not rejected.exists()
+
+    with (bundle / "transcript.txt").open("a", encoding="utf-8") as saved_text:
+        saved_text.write("tampered\n")
+    rejected_bundle = tmp_path / "mismatched-bundle"
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(prepared_manifest),
+                "--rescore-results",
+                str(bindings_path),
+                "--output-dir",
+                str(rejected_bundle),
+            ],
+            recording_catalog=catalog,
+            engine_factory=forbidden_engine,
+        )
+        == 1
+    )
+    assert "does not match" in capsys.readouterr().err.lower()
+    assert not rejected_bundle.exists()

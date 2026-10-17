@@ -3,7 +3,7 @@
 What to build: An operator can select language/context and short vocabulary hints through the same transcription workflow, obtain complete bundles identifying the effective choices, and compare reviewed Thai/English errors against the frozen baseline.
 Blocked by: 02 - Compare configurable CPU decoding through complete result bundles.
 Status: Blocked.
-Ready for agent: No; approved; waiting for ticket 02.
+Ready for agent: No; supported options/profile reporting are implemented, but controlled comparisons remain blocked by OPT-02 evidence.
 Triage label: ready-for-agent.
 
 ## Problem
@@ -28,6 +28,8 @@ Build vocabulary only from permitted tuning knowledge, never final-evaluation re
 
 Keep baseline VAD/fallback initially. An evidence-justified VAD/fallback case must be separately labeled and retain quiet-speech and timestamp checks; it is not a blanket speed shortcut. No automatic LLM text repair is introduced.
 
+Use the earlier diagnostics to investigate actual language switches, English written phonetically in Thai, context-propagated errors, omissions, and inconsistent names/numbers. A writing-convention difference is not automatically a semantic recognition error; freeze that review/scoring policy before choosing a candidate. A separately justified temperature-zero comparison may investigate sampling variation, with unchanged baseline retained and no claim of guaranteed correctness or cross-device determinism. Returned segment temperature alone cannot count retries.
+
 ## Testing
 
 Use public commands and existing fake-engine seams to verify option validation, effective metadata, Unicode preservation, and exporters. Use hand-authored text fixtures for reference cleaning, spoken English-only cues, and scoring. Restrict all real inference/quality comparisons to Formal Words and Conversation with Kob, with the agreed tuning/final-evaluation roles.
@@ -38,9 +40,10 @@ Use public commands and existing fake-engine seams to verify option validation, 
 - [ ] Unsupported combinations or ignored options fail clearly or are explicitly reported without claiming their application.
 - [ ] Separate controlled cases compare baseline with language, context, and short vocabulary hints, with all other effective options held fixed.
 - [ ] Frozen Thai/English scoring, important-name/number review, speech coverage, hallucination/repetition checks, and timing observations show which cases improve, regress, or remain inconclusive.
+- [ ] Reports distinguish reviewed language-switch/recognition errors, script/orthography differences, and reference mismatches; forced/detected language evidence is truthful and Kob answer text does not drive candidate selection.
 - [ ] Hints do not consume final-evaluation answer text, and reference preparation preserves spoken English while excluding translations/romanization.
 - [ ] Any VAD/fallback change is justified by observed evidence and assessed separately for retained quiet speech, retries, and original-time subtitle behavior.
-- [ ] Relevant public behavior and configured implementation-quality checks pass, with actual commands and sanitized evidence recorded.
+- [x] Profile, option validation, fake-engine metadata, comparison, and worker-isolation checks pass; full ordinary suite, lint, formatting, and types pass, with commands in the [implementation evidence](../../../docs/optimization-verification-20261018.md). No reviewed real-recording comparison is claimed.
 
 ## Out of scope
 
@@ -48,4 +51,4 @@ Additional real recordings or derived media; English-only or noise accuracy cert
 
 ## Further notes
 
-No hint is assumed to improve every recording, and a numerical accuracy pass requires reviewed reference coverage. Validation evidence: Pending implementation.
+Automatic/forced/per-window language modes, hashed prompt/hotword identities, scoring projections, and comparison fields are implemented. No hint/language/context trial has been run on the approved recordings, and no reviewed numerical accuracy comparison exists. Kob remains disclosed as prior exposure and cannot be treated as an independent untouched holdout. See [implementation evidence](../../../docs/optimization-verification-20261018.md).

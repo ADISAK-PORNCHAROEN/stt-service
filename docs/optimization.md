@@ -2,6 +2,10 @@
 
 The approved specification and six tickets are indexed in the local issue tracker. Only the full original Formal Words recording (aC-QbxZB7RU) and Conversation with Kob recording (8qcinxUA4YA) are authorized real-recording inputs for this work. File presence, folder membership, or an inherited media environment variable does not authorize another recording.
 
+## Follow-up research and proposed structure
+
+The [quality/latency follow-up research](research/stt-quality-performance-followup-20261018.md) records additional findings from pinned faster-whisper/CTranslate2 sources. The [architecture proposal](research/stt-quality-performance-architecture-20261018.md) maps them to immutable profiles, one shared pipeline, truthful engine diagnostics, reviewed scoring, and a bounded experiment sequence. These are research/design documents; they do not change supported commands, ticket blockers, or acceptance status.
+
 ## Current commands
 
 Use the root uv environment and the machine-specific dotenv file. All media, publisher transcripts, reviewed references, manifests, and result bundles stay outside Git. Choose a new destination for each command.
@@ -29,6 +33,22 @@ The evaluation manifest must explicitly contain both authorized identities, orig
 ```
 
 Relative paths resolve against the manifest's own directory. Duplicate/unknown identities, changed originals, mismatched publisher references, changed roles, and wildcard selections are rejected. The run rechecks bound file identities after media validation, model loading, inference, and before publication. A detected replacement invalidates the evaluation.
+
+## Startup profiles
+
+The same environment-backed profile is resolved once by the CLI or persistent worker. Defaults remain Turbo, CPU INT8, four threads, beam five, sequential mode, automatic language, VAD on, and the existing temperature fallback schedule. Change one setting at a time for screening; restarting a worker is required to change its profile. Result JSON records the stable profile ID, requested profile, backend-reported effective settings, and separate per-recording observations. Initial prompt and hotwords are hashed in the report and their text is never written into result metadata; configure one at a time.
+
+Examples for an explicitly selected trial profile:
+
+```powershell
+$env:STT_BEAM_SIZE = '3'
+$env:STT_CPU_THREADS = '2'
+uv run --env-file .env.local stt evaluate --manifest <approved-manifest.json> --recording aC-QbxZB7RU --output-dir <new-profile-run>
+```
+
+For GPU trials, set `STT_DEVICE=cuda` and a supported `STT_COMPUTE_TYPE` such as `float16` or `int8_float16`. The adapter checks visible CUDA devices and supported compute types before downloading/loading the model, and it never falls back to CPU. A returned result distinguishes capability discovery, model load, and completed inference. Device memory uses boundary samples from `nvidia-smi`; it is device-wide and may include other processes or miss brief peaks.
+
+The batched path is explicit with `STT_MODE=batched` and `STT_BATCH_SIZE=1`, `2`, or `4`. It reports that previous-text conditioning and retry thresholds are ignored by the pinned batched implementation, that only the first temperature is used, and that segment timestamps remain enabled. It builds a new VAD argument dictionary per transcription call. The current profile rejects batched mode with VAD disabled: the pinned batched API does not provide the sequential API's default full-file clip range for long recordings. Batch one is the path control before comparing larger batches.
 
 ## Reference preparation
 
@@ -84,6 +104,24 @@ The initial policy is `nfc-casefold-projections-v1`. Apply Unicode NFC, case-fol
 For a direct CLI smoke check, `transcribe` and `benchmark` accept `--approved-only`, which verifies a source's approved content hash before media processing and binds its identity through the pipeline. General production transcription remains usable for caller-provided files; this feature's real experiments must use the guard.
 
 The opted-in real CLI test uses that flag. The separate-process HTTP test verifies the supplied source before starting service processes and checks that it remains unchanged around upload and completion. Set its media environment variable only to one of the two full authorized originals. Never substitute a short excerpt or another recording to shorten a run.
+
+## Offline rescoring and comparison
+
+When the reference review changes, rescore saved runs without loading a model. Prefer the evaluation report, which binds each output to a source and result hash:
+
+```powershell
+uv run --env-file .env.local stt evaluate --manifest <reviewed-manifest.json> --rescore-results <saved-evaluation-directory/evaluation.json> --output-dir <new-rescore-directory>
+```
+
+This checks each saved JSON/TXT/SRT bundle for consistency and writes a new comparison destination. For a legacy transcript without an embedded source hash, an explicit binding document can name each `recording_id`, approved `source_sha256`, and exact `transcript_json` path. The report labels that source binding as operator-attested legacy provenance.
+
+Each full evaluation also writes `review-template.json`. Reviewers fill a row only after checking its exact result hash against the full original and record reviewer/time, important-error findings, boundary regressions, and host-isolation evidence for that run. The comparison rejects duplicate evaluation reports or transcript result hashes, carries each run's observed other-CPU time forward, and stays pending until warm-run isolation is reviewed; any recorded contention blocks acceptance. Then compare the baseline and candidate reports:
+
+```powershell
+uv run --env-file .env.local stt compare --baseline <baseline/evaluation.json> --candidate <candidate/evaluation.json> --review <baseline/review-template.json> --review <candidate/review-template.json> --output-dir <new-comparison-directory>
+```
+
+Repeat `--baseline` or `--candidate` for separate recording reports from the same profile and host. The comparison validates saved transcript hashes, source identity, the baseline profile, host, model revision, reference revision, and scoring policy. It reports medians/ranges, full-call RTFx, RSS/device-memory observations, reference units, text variability, quality differences, and human-review state. It does not run inference or promote a profile. Missing reviews, fewer than three warm runs, a changed host, or an unreviewed reference cannot produce an acceptance disposition.
 
 ## Acceptance status
 

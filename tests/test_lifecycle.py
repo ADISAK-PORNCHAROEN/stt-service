@@ -12,6 +12,7 @@ import stt_services.jobs as jobs
 from stt_services.api import create_app
 from stt_services.cli import main
 from stt_services.jobs import JobStore
+from stt_services.schemas import EngineResult, Segment
 from stt_services.worker import Worker
 
 DAY = 86400
@@ -222,6 +223,50 @@ def test_failed_engine_job_does_not_lose_next_queued_job(settings, engine_factor
             assert client.get(f"/jobs/{following}/result").status_code == 200
             assert not worker.run_once()
         assert len(calls) == 2
+
+
+def test_worker_keeps_one_profile_after_a_failed_job(settings, wav_bytes):
+    configured = settings.model_copy(update={"cpu_threads": 2, "beam_size": 3})
+    loaded_profiles = []
+    calls = []
+
+    class ProfileEngine:
+        def __init__(self, startup_settings):
+            self.profile = startup_settings.resolve_profile()
+            loaded_profiles.append(self.profile)
+
+        def transcribe(self, path):
+            calls.append(path)
+            if len(calls) == 1:
+                raise RuntimeError("simulated failed inference")
+            return EngineResult(
+                segments=[Segment(0.125, 0.875, "สวัสดี Apple")],
+                effective_configuration={
+                    "device": {"requested": "cpu", "actual": "cpu"},
+                    "compute_type": {"requested": "int8", "actual": "int8_float32"},
+                    "cpu_threads": self.profile.cpu_threads,
+                    "beam_size": self.profile.beam_size,
+                    "vad_filter": True,
+                    "language_mode": "auto",
+                },
+                observations={"language_source": "automatic_initial_detection"},
+            )
+
+    with TestClient(create_app(configured)) as client:
+        failed, succeeded = submit(client, wav_bytes), submit(client, wav_bytes)
+        with Worker(configured, ProfileEngine) as worker:
+            expected_profile = worker.pipeline.profile
+            assert worker.run_once()
+            assert worker.run_once()
+            assert worker.pipeline.profile.profile_id == expected_profile.profile_id
+        assert state(client, failed)["status"] == "failed"
+        assert state(client, succeeded)["status"] == "succeeded"
+        transcript = client.get(f"/jobs/{succeeded}/result").json()
+        assert transcript["configuration"]["profile_id"] == expected_profile.profile_id
+        assert transcript["configuration"]["effective"]["beam_size"] == 3
+        assert transcript["configuration"]["effective"]["cpu_threads"] == 2
+    assert len(loaded_profiles) == 1
+    assert len(calls) == 2
 
 
 def test_health_becomes_unready_at_stale_heartbeat_boundary(settings, engine_factory, monkeypatch):
