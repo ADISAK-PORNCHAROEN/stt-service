@@ -5,7 +5,7 @@ This file tracks implementation work locally. Read the [specification](../../.sc
 | Ticket | What to build | Blocked by | Status | Ready for agent |
 | --- | --- | --- | --- | --- |
 | [01](../../.scratch/stt-mvp/issues/01-cli-json.md) | CLI and reusable JSON pipeline | None | Complete | Done |
-| [02](../../.scratch/stt-mvp/issues/02-exports-benchmark.md) | TXT/SRT and measured baseline | 01 | In progress | One Thai phrase reviewed; full text/timing review pending |
+| [02](../../.scratch/stt-mvp/issues/02-exports-benchmark.md) | TXT/SRT and measured baseline | 01 | In progress | Two Thai phrases reviewed; full text/timing review pending |
 | [03](../../.scratch/stt-mvp/issues/03-api-worker-json.md) | Local API, SQLite queue, persistent worker, JSON | 01 | Complete | Done |
 | [04](../../.scratch/stt-mvp/issues/04-api-exports.md) | TXT/SRT result delivery over HTTP | 02, 03 | Blocked | HTTP verified; awaits 02 acceptance |
 | [05](../../.scratch/stt-mvp/issues/05-validation-recovery.md) | Validation, queue admission, restart hardening | 03 | Complete | Done |

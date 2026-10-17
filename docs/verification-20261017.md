@@ -9,7 +9,7 @@ The initial documentation baseline is Git `19a6f22`. Private recordings, raw
 transcripts, databases, model weights and test artifacts remain outside Git.
 
 Engineering checks below are complete. Full-recording cold/warm measurement is
-complete, and one user-reviewed phrase correction is recorded. Full text/timing
+complete, and two user-reviewed phrase corrections are recorded. Full text/timing
 review remains open; neither a partial review nor the measurements establish a
 numerical accuracy pass.
 
@@ -105,10 +105,12 @@ testing is outside this deliberately localhost-only, session-free MVP.
 - Full MP4 cold/warm runs: completed. See the
   [baseline report](../benchmarks/reports/20261017-turbo-cpu.md).
 - A user listened to the 7.5–15.2-second excerpt and corrected one Thai phrase,
-  identifying a transcription error. Exact phrase onset/offset was not supplied;
-  7.92–12.12 seconds remains a model-derived candidate. The rest of the recording
-  and full checks of Thai/English wording, names, numbers, silence, boundaries,
-  and original offsets remain unreviewed. Raw wording and audio stay in a private
-  review note outside Git.
+  identifying a transcription error. A second correction covers warm-run SRT
+  cue 30 (model interval 164.580–170.500 seconds). The user did not provide
+  separate phrase onset/offset measurements; 7.92–12.12 seconds and the cue 30
+  interval remain model-derived. The rest of the recording and full checks of
+  Thai/English wording, names, numbers, silence, boundaries, and original offsets
+  remain unreviewed. Raw wording and audio stay in a private review note outside
+  Git.
 - No reviewed reference text exists, so CER/WER and numerical accuracy claims
   are intentionally absent. Home-server performance remains unmeasured.
