@@ -2,8 +2,8 @@
 
 What to build: Safe API data expiry and end-to-end acceptance evidence.
 Blocked by: 04, 05.
-Status: Blocked.
-Ready for agent: Runtime acceptance is verified; full-recording owner text/timing review remains outstanding.
+Status: Complete.
+Ready for agent: Done; owner accepted closure with the full-recording review gap disclosed.
 
 Triage label: ready-for-agent
 
@@ -42,7 +42,7 @@ Run the ordinary suite, Ruff lint/format, and configured type checking. Perform 
 - [x] End-to-end fake-engine checks, ordinary tests, lint, format, and type checking pass with recorded commands/outcomes.
 - [x] Real MP4 cold/warm measurements are recorded with hardware, versions, conditions, and limitations.
 - [x] Two user phrase corrections and their model-derived timing limitations are recorded without raw transcript in Git.
-- [ ] Manual text/timing review across the original audio is recorded, including remaining unverified categories and limitations.
+- [x] Owner-directed closure waives full-recording text/timing review because no reference subtitles are available; unverified categories and lack of accuracy claims remain explicit.
 - [x] Operator instructions and sanitized acceptance summary distinguish measured evidence from remaining gaps.
 
 ## Out of scope
@@ -51,6 +51,6 @@ Deletion of user-managed sources/results, cache eviction, new engines, public de
 
 ## Further notes
 
-Tickets 01–05 are complete. Ticket 02 was closed by owner direction using two phrase-level review samples, with the remaining full-recording review gap documented. Ticket 06 still requires broader manual text/timing review before final MVP acceptance. Home-server behavior remains unmeasured.
+Owner decision (2026-10-17): close ticket 06 on the implemented and measured evidence because no reference subtitles are available for the original recording. Full-recording text/timing review is waived, not completed; the two reviewed phrase corrections do not establish overall accuracy. Home-server behavior remains unmeasured.
 
-Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Runtime, retention, lifecycle, API/worker, and opt-in real-model paths are verified. Cold/warm measurements and two user-reviewed phrases are recorded; full-recording text/timing acceptance remains open.
+Validation evidence: [Engineering verification](../../../docs/verification-20261017.md) and [baseline measurements](../../../benchmarks/reports/20261017-turbo-cpu.md). Runtime, retention, lifecycle, API/worker, and opt-in real-model paths are verified. Cold/warm measurements and two user-reviewed phrases are recorded. Ticket 06 is closed by owner acceptance with full-recording review and accuracy explicitly unverified.

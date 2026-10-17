@@ -1,6 +1,6 @@
 ﻿# STT MVP specification
 
-Approved scope with implementation present. This specification records required behavior and the current source contracts; source inspection is not evidence that acceptance checks passed. Real-recording cold/warm measurements are recorded; human text/timing review remains in progress. The parent maintains ticket status and validation evidence in the [local tracker](../../docs/agents/issue-tracker.md).
+Approved scope with implementation present. This specification records required behavior and the current source contracts; source inspection is not evidence that acceptance checks passed. Owner disposition (2026-10-17): tickets 02 and 06 are closed with two phrase-level corrections and the lack of reference subtitles disclosed; full-recording text/timing review is waived, not complete. The parent maintains ticket status and validation evidence in the [local tracker](../../docs/agents/issue-tracker.md).
 
 Read the [architecture](architecture.md) for current responsibilities, [README](../../README.md) for operator commands, and [glossary](../../CONTEXT.md) for domain terms. This approved MVP supersedes exploratory alternatives in the [handoff](../../STT-HANDOFF.md).
 
@@ -108,7 +108,7 @@ Run `uv run stt benchmark <file> --output-dir <directory>` using the supplied MP
 
 Benchmark `wall_seconds` wraps the complete pipeline call through publication and its return; top-level per-run `rtfx_total` is duration divided by that wall time. Transcript `metrics.total_seconds` and its `rtfx_total` stop before final metrics JSON serialization/rename, so they are not full-publication metrics. Report inference RTFx separately. psutil samples process RSS every 50 ms during pipeline processing; sampling can miss brief peaks and does not isolate model-only RAM.
 
-Manually review actual Thai/English text, names, numbers, silence, boundary timing, and original offsets; document observations and limitations. CER/WER require reviewed ground truth and documented normalization/tokenization. No performance/accuracy threshold is approved, and development-PC measurements establish no home-server result. Benchmark/review and acceptance evidence remain pending/in progress under parent ownership.
+Manually review actual Thai/English text, names, numbers, silence, boundary timing, and original offsets; document observations and limitations. CER/WER require reviewed ground truth and documented normalization/tokenization. No performance/accuracy threshold is approved, and development-PC measurements establish no home-server result. Owner disposition (2026-10-17): close tickets 02 and 06 on measured cold/warm runs and two user-reviewed phrase corrections, waiving full-recording review because no reference subtitles are available. Full-recording accuracy and timing remain unverified; no CER/WER claim is made for the benchmark recording.
 
 ## Out of Scope
 

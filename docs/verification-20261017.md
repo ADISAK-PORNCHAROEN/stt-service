@@ -10,9 +10,9 @@ transcripts, databases, model weights and test artifacts remain outside Git.
 
 Engineering checks below are complete. Full-recording cold/warm measurement is
 complete, and two user-reviewed phrase corrections are recorded. The owner
-directed ticket 02 to close on this limited sample; full text/timing review
-remains open, and neither the partial review nor measurements establish a
-numerical accuracy pass.
+directed tickets 02 and 06 to close with the limited review and lack of reference
+subtitles disclosed. Full-recording text/timing review remains unperformed, and
+neither the partial review nor measurements establish a numerical accuracy pass.
 
 ## Commands and observed evidence
 
@@ -112,7 +112,11 @@ testing is outside this deliberately localhost-only, session-free MVP.
   interval remain model-derived. The rest of the recording and full checks of
   Thai/English wording, names, numbers, silence, boundaries, and original offsets
   remain unreviewed. Raw wording and audio stay in a private review note outside
-  Git. Ticket 02 was closed by owner direction with this limitation retained;
-  ticket 06 still awaits full-recording review for final MVP acceptance.
-- No reviewed reference text exists, so CER/WER and numerical accuracy claims
-  are intentionally absent. Home-server performance remains unmeasured.
+  Git. Tickets 02 and 06 were closed by owner direction with this limitation
+  retained; full-recording review was waived because no reference subtitles are
+  available for the original recording. This is not a transcription-quality
+  pass.
+- No reviewed reference text exists for the original benchmark recording, so
+  CER/WER and numerical accuracy claims are intentionally absent. The separate
+  song sample has its own user-provided reference and does not substitute for
+  this recording. Home-server performance remains unmeasured.
