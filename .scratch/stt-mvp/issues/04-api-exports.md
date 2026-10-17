@@ -2,8 +2,8 @@
 
 What to build: HTTP access to the same completed text/subtitle artifacts as the CLI.
 Blocked by: 02, 03.
-Status: In progress.
-Ready for agent: Implementation present; measurement/quality acceptance remains open.
+Status: Blocked.
+Ready for agent: HTTP behavior is verified; waiting for ticket 02 acceptance.
 
 Triage label: ready-for-agent
 

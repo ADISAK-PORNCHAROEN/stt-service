@@ -2,8 +2,8 @@
 
 What to build: Safe API data expiry and end-to-end acceptance evidence.
 Blocked by: 04, 05.
-Status: In progress.
-Ready for agent: Runtime acceptance verified; human text/timing review remains open.
+Status: Blocked.
+Ready for agent: Runtime acceptance is verified; waiting for tickets 02 and 04 acceptance.
 
 Triage label: ready-for-agent
 
