@@ -62,19 +62,33 @@ class Pipeline:
         self.engine = self.engine_factory(self.settings)
         return time.perf_counter() - started
 
-    def run(self, source: Path, output_dir: Path) -> Transcript:
+    def run(
+        self,
+        source: Path,
+        output_dir: Path,
+        *,
+        source_guard: Callable[[], None] | None = None,
+    ) -> Transcript:
         started = time.perf_counter()
         if output_dir.exists():
             raise ValueError("Output directory already exists; choose a new directory")
+        if source_guard:
+            source_guard()
         audio = inspect_audio(source, self.settings)
+        if source_guard:
+            source_guard()
         self.settings.prepare()
         metrics = RunMetrics()
         with MemorySampler() as sampler:
             metrics.model_load_seconds = self.load()
             assert self.engine is not None
+            if source_guard:
+                source_guard()
             inference_started = time.perf_counter()
             segments = self.engine.transcribe(source)
             metrics.inference_seconds = time.perf_counter() - inference_started
+            if source_guard:
+                source_guard()
             previous_start = 0.0
             restored = []
             for segment in segments:
@@ -119,6 +133,8 @@ class Pipeline:
                 )
                 # Every artifact is final before the only publication operation.
                 # Full time through publication is measured by the benchmark caller.
+                if source_guard:
+                    source_guard()
                 staging.rename(output_dir)
             finally:
                 if staging.exists():

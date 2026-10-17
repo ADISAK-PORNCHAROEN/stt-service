@@ -4,6 +4,7 @@ import hashlib
 import json
 import platform
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 import psutil
@@ -11,7 +12,23 @@ import psutil
 from stt_services.pipeline import Pipeline
 
 
-def benchmark(source: Path, output_dir: Path, pipeline: Pipeline) -> None:
+def hardware_report() -> dict[str, object]:
+    return {
+        "os": platform.platform(),
+        "processor": platform.processor(),
+        "physical_cpus": psutil.cpu_count(logical=False),
+        "logical_cpus": psutil.cpu_count(),
+        "ram_bytes": psutil.virtual_memory().total,
+    }
+
+
+def benchmark(
+    source: Path,
+    output_dir: Path,
+    pipeline: Pipeline,
+    *,
+    source_guard: Callable[[], None] | None = None,
+) -> None:
     if output_dir.exists():
         raise ValueError("Benchmark output directory already exists")
     output_dir.mkdir(parents=True)
@@ -19,7 +36,7 @@ def benchmark(source: Path, output_dir: Path, pipeline: Pipeline) -> None:
     for name in ("cold", "warm"):
         print(f"Starting {name} run...", flush=True)
         started = time.perf_counter()
-        result = pipeline.run(source, output_dir / name)
+        result = pipeline.run(source, output_dir / name, source_guard=source_guard)
         wall_seconds = time.perf_counter() - started
         runs.append(
             {
@@ -36,12 +53,7 @@ def benchmark(source: Path, output_dir: Path, pipeline: Pipeline) -> None:
         "source_sha256": digest,
         "source_bytes": source.stat().st_size,
         "duration_seconds": result.duration_seconds,
-        "hardware": {
-            "os": platform.platform(),
-            "processor": platform.processor(),
-            "logical_cpus": psutil.cpu_count(),
-            "ram_bytes": psutil.virtual_memory().total,
-        },
+        "hardware": hardware_report(),
         "model": result.model,
         "configuration": result.configuration,
         "versions": result.versions,

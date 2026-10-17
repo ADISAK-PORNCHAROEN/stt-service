@@ -1,0 +1,49 @@
+# 02: Compare configurable CPU decoding through complete result bundles
+
+What to build: An operator can select CPU beam/thread configurations through the existing workflow, receive complete result bundles identifying the actual settings, and compare speed and reviewed quality against the controlled baseline.
+Blocked by: 01 - Prepare the two-recording evaluation and controlled CPU baseline.
+Status: Blocked.
+Ready for agent: No; approved; waiting for ticket 01.
+Triage label: ready-for-agent.
+
+## Problem
+
+Decoding is currently fixed at beam five and reported settings are hard-coded. A parameter experiment is not reproducible if runtime behavior, metadata, and the persistent worker disagree.
+
+## Solution
+
+Carry validated CPU candidate settings from shared startup configuration through actual inference, canonical result metadata, and benchmark comparison. Retain the existing default and source/output protections. Include the necessary narrow configuration/reporting prefactoring within this end-to-end slice.
+
+## User stories
+
+1. As the operator, I want a selected CPU configuration to determine actual decoding, so that its measured outcome is reproducible.
+2. As the reviewer, I want resolved settings in JSON, so that a report cannot claim an option the engine ignored.
+3. As the service operator, I want the same startup settings respected by the persistent worker, so that CLI candidates have a consistent delivery path.
+
+## Implementation decisions
+
+Use the existing settings, CLI/shared pipeline, and engine-factory seam. Configuration reporting must come from resolved inference behavior and remain compatible with the canonical transcript. Keep new reporting additive. Capture available evaluation diagnostics externally without presenting them as correctness probabilities.
+
+Start isolated screening on Formal Words with beam one/three/five and thread counts two/four, one factor at a time. Freeze candidate settings before using Conversation with Kob for final comparison. Keep device CPU, compute INT8, language/VAD/context/fallback settings at baseline in this slice. No setting change justifies silent fallback or an overwrite of prior outputs.
+
+## Testing
+
+Exercise public transcription and benchmark commands using injected engines, generated fixtures, real files, and observable complete bundles. Check invalid settings, actual metadata, model reuse, and recovery of the default. Follow existing CLI, output-publication, and source-timeline contract prior art. Actual experiments remain restricted to the two originals.
+
+## Acceptance criteria
+
+- [ ] Validated CPU beam/thread selections reach inference through the public CLI and shared worker startup configuration; invalid settings fail clearly before processing.
+- [ ] Existing default behavior is reproducible, and result configuration reports actual resolved settings/model revision with no hard-coded contradictory metadata.
+- [ ] Each candidate produces one consistent canonical JSON/TXT/SRT bundle without another inference for exporters; original source timeline, output ownership, and atomic publication are preserved.
+- [ ] Guarded experiments compare one factor at a time, freeze settings before final evaluation, and record both time/resource costs and reviewed Thai/English/important-error outcomes.
+- [ ] External diagnostics distinguish observed settings and decode behavior from an uncalibrated confidence estimate.
+- [ ] Operator-visible reports identify beneficial, regressing, or inconclusive candidates without automatically replacing the baseline.
+- [ ] Appropriate public behavior checks, lint, formatting, and types pass with commands and actual evidence recorded.
+
+## Out of scope
+
+Other real recordings or derived test media; GPU; batched decoding; language or vocabulary changes; extra HTTP tuning endpoints; selecting a final service default.
+
+## Further notes
+
+Ticket 01 supplies the evaluation and reviewed-baseline contract. This slice supplies shared candidate configuration/reporting for the following experiments. Validation evidence: Pending implementation.

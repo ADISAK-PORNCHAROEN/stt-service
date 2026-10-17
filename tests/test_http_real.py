@@ -11,6 +11,8 @@ import httpx
 import psutil
 import pytest
 
+from stt_services.evaluation import authorize_media
+
 
 def stop_tree(process):
     try:
@@ -33,6 +35,7 @@ def test_real_separate_api_and_worker_processes(tmp_path):
     media = os.environ.get("STT_TEST_MEDIA")
     if not media:
         pytest.skip("Set STT_TEST_MEDIA to a supported recording")
+    authorized = authorize_media(Path(media))
     port = int(os.environ.get("STT_TEST_PORT", "18765"))
     base_url = f"http://127.0.0.1:{port}"
     try:
@@ -67,8 +70,13 @@ def test_real_separate_api_and_worker_processes(tmp_path):
                         pass
                     assert time.monotonic() < deadline, "Worker did not become ready"
                     time.sleep(0.2)
-                with Path(media).open("rb") as source:
-                    response = client.post("/jobs", files={"file": (Path(media).name, source)})
+                with authorized.source.open("rb") as source:
+                    authorized.assert_unchanged()
+                    assert os.path.samestat(os.fstat(source.fileno()), authorized.source.stat())
+                    response = client.post(
+                        "/jobs", files={"file": (authorized.source.name, source)}
+                    )
+                    authorized.assert_unchanged()
                 assert response.status_code == 202, response.text
                 job_id = response.json()["job_id"]
                 deadline = time.monotonic() + 1800
@@ -89,6 +97,7 @@ def test_real_separate_api_and_worker_processes(tmp_path):
                 assert transcript["versions"]["model_revision"] != "unreported"
                 assert transcript["metrics"]["model_load_seconds"] == 0
                 assert client.get("/health").status_code == 200
+                authorized.assert_unchanged()
         finally:
             for process in reversed(processes):
                 stop_tree(process)

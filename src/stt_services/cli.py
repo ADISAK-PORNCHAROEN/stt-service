@@ -8,24 +8,59 @@ from pathlib import Path
 from stt_services.benchmark import benchmark
 from stt_services.config import Settings
 from stt_services.engines.whisper import WhisperEngine
+from stt_services.evaluation import (
+    APPROVED_RECORDINGS,
+    ApprovedRecording,
+    authorize_media,
+    evaluate,
+    prepare_references,
+)
 from stt_services.pipeline import EngineFactory, Pipeline
 
 
-def main(argv: list[str] | None = None, *, engine_factory: EngineFactory = WhisperEngine) -> int:
+def main(
+    argv: list[str] | None = None,
+    *,
+    engine_factory: EngineFactory = WhisperEngine,
+    recording_catalog: tuple[ApprovedRecording, ...] = APPROVED_RECORDINGS,
+) -> int:
     parser = argparse.ArgumentParser(prog="stt")
     commands = parser.add_subparsers(dest="command", required=True)
     transcribe = commands.add_parser("transcribe", help="Transcribe a local audio/video file")
     transcribe.add_argument("file", type=Path)
     transcribe.add_argument("--output-dir", type=Path, required=True)
+    transcribe.add_argument("--approved-only", action="store_true")
     bench = commands.add_parser("benchmark", help="Run cold/warm transcription and record metrics")
     bench.add_argument("file", type=Path)
     bench.add_argument("--output-dir", type=Path, required=True)
+    bench.add_argument("--approved-only", action="store_true")
+    evaluation = commands.add_parser("evaluate", help="Evaluate the two authorized recordings")
+    evaluation.add_argument("--manifest", type=Path, required=True)
+    evaluation.add_argument("--output-dir", type=Path, required=True)
+    evaluation.add_argument("--prepare-references", action="store_true")
+    evaluation.add_argument(
+        "--recording", help="Select one authorized original; manifest stays explicit"
+    )
     serve = commands.add_parser("serve", help="Serve the job API on 127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
     commands.add_parser("worker", help="Run the single persistent inference worker")
     args = parser.parse_args(argv)
     try:
         settings = Settings()
+        if args.command == "evaluate":
+            _validate_output(args.output_dir, settings)
+            if args.prepare_references:
+                prepare_references(args.manifest, args.output_dir, catalog=recording_catalog)
+                return 0
+            evaluate(
+                args.manifest,
+                args.output_dir,
+                settings,
+                engine_factory,
+                catalog=recording_catalog,
+                recording_id=args.recording,
+            )
+            return 0
         if args.command == "serve":
             import uvicorn
 
@@ -40,12 +75,23 @@ def main(argv: list[str] | None = None, *, engine_factory: EngineFactory = Whisp
             with Worker(settings, engine_factory) as worker:
                 worker.run_forever()
             return 0
+        media = authorize_media(args.file, recording_catalog) if args.approved_only else None
+        source = media.source if media else args.file
         if args.command == "benchmark":
             _validate_output(args.output_dir, settings)
-            benchmark(args.file, args.output_dir, Pipeline(settings, engine_factory))
+            benchmark(
+                source,
+                args.output_dir,
+                Pipeline(settings, engine_factory),
+                source_guard=media.assert_unchanged if media else None,
+            )
             return 0
         _validate_output(args.output_dir, settings)
-        transcript = Pipeline(settings, engine_factory).run(args.file, args.output_dir)
+        transcript = Pipeline(settings, engine_factory).run(
+            source,
+            args.output_dir,
+            source_guard=media.assert_unchanged if media else None,
+        )
         print(f"Saved {len(transcript.segments)} segments to {args.output_dir}")
         return 0
     except (OSError, ValueError, RuntimeError) as exc:

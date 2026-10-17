@@ -16,7 +16,7 @@ def test_real_model_transcribes_media(tmp_path):
         pytest.skip("Set STT_TEST_MEDIA to a supported recording")
     source = Path(media)
     output = tmp_path / "result"
-    assert main(["transcribe", str(source), "--output-dir", str(output)]) == 0
+    assert main(["transcribe", str(source), "--output-dir", str(output), "--approved-only"]) == 0
     result = json.loads((output / "transcript.json").read_text(encoding="utf-8"))
     assert result["duration_seconds"] > 0
     assert result["segments"]
