@@ -13,7 +13,7 @@ from pathlib import Path
 
 import psutil
 
-from stt_services.pipeline import Pipeline
+from stt_services.transcription.pipeline import Pipeline
 
 
 def hardware_report() -> dict[str, object]:

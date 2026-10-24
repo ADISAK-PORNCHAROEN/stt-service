@@ -1,16 +1,18 @@
 # Whisper Turbo transcription optimization
 
-## Active milestone update (24 October 2026, owner re-authorization)
+> Archived scope: this document records the former two-recording homelab optimization plan. The active owner-approved scope is now [local transcription workflow and REST API architecture](../stt-rest-api/spec.md), tracked by [GitHub issue #1](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/1) and its tickets. Do not use the historical gates below as current work. The owner removed OPT-02, OPT-04, and OPT-05 from the active plan; their local ticket files have been deleted. Homelab acceptance is deferred.
 
-Work only on OPT-01, OPT-02, OPT-04, OPT-05, and OPT-06. Use the full Formal Words and Conversation with Kob originals and their existing publisher answers. First review each reference against speech and timing, then establish the CPU INT8 baseline on the owner's i7-4770K homelab through the CLI and API/worker. Preserve already-complete and cancelled dispositions. OPT-02 may compare no more than two CPU candidates only when baseline or reviewed-reference evidence shows a need. OPT-04 is conditional on sequential results being unsuitable. OPT-05 permits at most one short hint experiment for a reference-confirmed error. Record a criterion-based N/A disposition when a conditional ticket is not needed.
+## Historical milestone update (24 October 2026)
+
+This was the prior owner-authorized plan. It is retained as historical rationale only and has been superseded by the local-only scope in the current spec linked above.
 
 Keep media, references, models, caches, databases, and run outputs outside Git. `.env` and local environment files must remain ignored. Do not add GitHub Actions, use GPU, change models, run broad sweeps, test on another host, deploy, or make production-SLA/general-accuracy claims. The public repository may contain only source and sanitized project documentation, never private runtime data. Earlier 24 October local-only scope and any contradictions in historical notes are superseded by this owner re-authorization. Reference review and host acceptance remain unproven until their evidence exists.
 
-Document state: Approved for implementation by owner instruction.
-Status: In progress.
-Triage label: ready-for-agent.
+Document state: Archived; superseded for current work.
+Status: Historical.
+Triage label: none.
 
-## Active scope update (23 October 2026)
+## Historical scope update (23 October 2026)
 
 The owner narrowed delivery to a CPU-only homelab test and portfolio demonstration on the i7-4770K system with 16 GB RAM and a 1 TB SSD. The system must complete the approved transcription workflow on that machine, stay within available memory, and publish usable results. Record actual runtime and quality evidence. Real-time throughput is a reported metric, not a release gate; no production availability or service-level claim is in scope. This update supersedes the earlier development-PC GPU, two-host comparison, and mandatory RTFx-at-least-one objectives.
 
@@ -185,12 +187,12 @@ CPU-profile, batch, language/hint, GPU, and other model comparisons are excluded
 
 ## Further Notes
 
-This specification retains historical decisions and reports. The active re-authorization at the top of this file supersedes the earlier 24 October one-recording, local-only update and restores the two approved originals and homelab acceptance scope.
+This specification retains historical decisions and reports. The current owner-approved local-only scope is recorded in the REST/API spec linked at the top of this document.
 
 The existing benchmark already reuses a loaded model; adding reuse is not new optimization work. Existing dependency compatibility constraints, including the current PyAV ceiling, continue to apply. GPU support exists in the implementation but is outside this delivery.
 
-Earlier owner approval covered the public test seams and six-ticket breakdown. The current scope keeps OPT-01, OPT-02, OPT-04, OPT-05, and OPT-06 active; OPT-03 GPU work remains cancelled. Conditional tickets stay open only until their trigger is tested and receive a documented N/A disposition when the acceptance criteria show they are unnecessary.
+The earlier public test seams and ticket breakdown are historical. OPT-02, OPT-04, and OPT-05 are no longer active, and OPT-03 GPU work remains cancelled. Current implementation and acceptance work is tracked only by the newer owner-approved REST/API issue set.
 
 The owner subsequently requested the Kob problem/remedies be added to this specification and tickets, followed by further source research and a manageable structure. This elaborates the already approved seams and six-ticket breakdown. The [follow-up research](../../docs/research/stt-quality-performance-followup-20261018.md) and [architecture proposal](../../docs/research/stt-quality-performance-architecture-20261018.md) supply version-specific rationale. Future media-decode reuse, model/backend changes, and selective second passes in those notes remain outside this delivery. Documentation changes do not complete reference review, controlled timing, or any implementation acceptance criterion.
 
-See the [review package](review.md) and [published ticket breakdown](review.md#approved-tickets). The existing [domain glossary](../../CONTEXT.md) supplies terminology. This specification records scope and acceptance requirements; actual implementation progress and validation evidence are tracked separately in the tickets.
+See the [historical review package](review.md). The existing [domain glossary](../../CONTEXT.md) supplies terminology. Current implementation progress and validation evidence are tracked in the issues linked from the active REST/API spec.

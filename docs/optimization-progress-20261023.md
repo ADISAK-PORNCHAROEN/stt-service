@@ -14,7 +14,7 @@ The implementation audit found no required runtime gap for the narrowed scope. T
 
 The current workstation is an Intel i3-12100F system with four cores, eight threads, and 15.8 GB visible RAM. It is not the target homelab. Both authorized full originals have now completed once on this workstation using the CPU INT8 baseline: Formal Words through the guarded CLI and Conversation with Kob through the local API and persistent worker. These are local functional runs, not acceptance runs.
 
-These transcription runs used the dirty working tree based on HEAD `4193036b7b6dcfe217f502f2433baf01dd5387ff` and completed without runtime source changes during the runs. A later follow-up in this continuation fixed the saved-SRT validator in `src/stt_services/evaluation.py` and added a two-cue regression in `tests/test_evaluation.py`; its validation results are recorded below.
+These transcription runs used the dirty working tree based on HEAD `4193036b7b6dcfe217f502f2433baf01dd5387ff` and completed without runtime source changes during the runs. A later follow-up in this continuation fixed the saved-SRT validator in `src/stt_services/evaluation/evaluation_service.py` and added a two-cue regression in `tests/test_evaluation.py`; its validation results are recorded below.
 
 | Check | Result |
 | --- | --- |

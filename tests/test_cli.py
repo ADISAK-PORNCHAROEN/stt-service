@@ -2,7 +2,7 @@ import json
 import wave
 
 from stt_services.cli import main
-from stt_services.schemas import Segment
+from stt_services.domain.transcript_entities import Segment
 
 
 class FakeEngine:

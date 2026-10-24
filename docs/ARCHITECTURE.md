@@ -6,13 +6,19 @@
 | --- | --- | --- |
 | CLI and process startup | `src/stt_services/cli.py` | Parse `transcribe`, `benchmark`, `evaluate`, `compare`, `serve`, and `worker` commands; loopback API binding |
 | Configuration | `src/stt_services/config.py` | Immutable environment-backed runtime settings and managed data paths |
-| Media validation | `src/stt_services/uploads.py`, `audio.py` | Stream and bound HTTP uploads; restrict formats/protocols; inspect and decode media before admission/inference |
-| Shared transcription | `src/stt_services/pipeline.py`, `engines/whisper.py` | Reuse the inference pipeline, map times to the source timeline, and stage complete artifacts |
-| Transcript contract and export | `src/stt_services/schemas.py`, `exporters.py` | Canonical JSON schema plus deterministic TXT/SRT derivation |
-| HTTP service | `src/stt_services/api.py` | FastAPI routes, request validation, job status/results, and health/readiness |
-| Durable queue | `src/stt_services/jobs.py` | SQLite schema, admission/claim transactions, retention, leases, and recovery helpers |
-| Persistent worker | `src/stt_services/worker.py` | Singleton ownership, startup recovery, one loaded model, sequential jobs, heartbeat and cleanup |
-| Evaluation and comparisons | `src/stt_services/evaluation.py`, `comparison.py`, `references.py` | Guarded allowlisted recording evaluation, offline scoring, and immutable comparison artifacts |
+| Media validation | `src/stt_services/media/upload_stager.py`, `media/audio_inspector.py` | Stage bounded HTTP uploads; restrict formats and protocols; inspect media before admission and inference |
+| Shared transcription | `src/stt_services/transcription/pipeline.py`, `engines/whisper.py` | Reuse inference for CLI and worker, preserve source timeline, and publish complete artifacts |
+| Transcript contract and export | `src/stt_services/domain/transcript_entities.py`, `transcription/transcript_exporter.py` | Engine-independent transcript types, canonical JSON, and deterministic TXT/SRT derivation |
+| HTTP application | `src/stt_services/api/app.py` | Construct FastAPI services, configure middleware and error mapping, and register routers |
+| HTTP routes, controllers, and DTOs | `src/stt_services/api/routes/`, `api/controllers/`, `api/dto/` | Register endpoint/OpenAPI metadata, adapt HTTP input/output, and define public payloads |
+| Job application layer | `src/stt_services/application/jobs_service.py`, `job_repository.py`, `job_policy.py`, `domain/job_entity.py` | Apply job and result policy through typed entities and a persistence contract |
+| SQLite/filesystem adapter | `src/stt_services/infrastructure/sqlite_job_repository.py` | Implement durable admission, claim, lifecycle, retention, lease, and recovery operations |
+| Persistent worker | `src/stt_services/workers/job_worker.py` | Own singleton startup/recovery, one loaded model, sequential jobs, heartbeat, and cleanup |
+| Evaluation and comparisons | `src/stt_services/evaluation/` | Guard allowlisted recording evaluation, offline scoring, and immutable comparison artifacts |
+
+## Dependency direction
+
+FastAPI routes call controllers, which translate HTTP data and errors while using application services and DTOs. Job services depend on domain entities and the `JobRepository` contract; the SQLite/filesystem adapter implements that contract. The API application and worker select the concrete adapter at process boundaries. The CLI and worker share the transcription pipeline, which depends on media inspection, the engine interface, transcript entities, and artifact exporters. Persistence rows remain internal to the adapter, and HTTP DTOs remain separate from job and transcript entities.
 
 ## Data flow
 
@@ -24,6 +30,6 @@ CLI and API paths validate media before inference and call the shared pipeline. 
 - Accepted MVP behavior: [MVP specification](../.scratch/stt-mvp/spec.md).
 - Current optimization design and dependency gates: [optimization specification](../.scratch/stt-optimization/spec.md), its ticket files, and [local tracker](agents/issue-tracker.md).
 - Persisted entities and ownership: [schema guide](SCHEMA.md).
-- HTTP route semantics: [API guide](API.md); FastAPI route declarations and annotations in `api.py` generate the OpenAPI document at runtime. `schemas.py` owns transcript data structures, not HTTP response models.
+- HTTP route semantics: [API guide](API.md); route declarations and annotations under `api/routes/` generate the OpenAPI document at runtime. `domain/transcript_entities.py` owns transcript data structures, not HTTP response models.
 
 Source paths above are navigation aids. Confirm current definitions and callers in source before changing a boundary. There is no separate generated source graph or graph freshness signal configured by this setup.

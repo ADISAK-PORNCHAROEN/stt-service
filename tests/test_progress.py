@@ -1,17 +1,15 @@
-"""Progress observed through HTTP while inference and publication are in flight."""
-
 import sqlite3
 from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
-import stt_services.pipeline as pipeline_module
-from stt_services.api import create_app
+import stt_services.transcription.pipeline as pipeline_module
+from stt_services.api.app import create_app
+from stt_services.domain.transcript_entities import Segment
 from stt_services.engines.whisper import WhisperEngine
-from stt_services.jobs import JobStore
-from stt_services.schemas import Segment
-from stt_services.worker import Worker
+from stt_services.infrastructure.sqlite_job_repository import SQLiteJobRepository
+from stt_services.workers.job_worker import Worker
 
 
 @pytest.mark.parametrize("failure", [None, "inference", "publication"])
@@ -67,7 +65,6 @@ def test_http_progress_during_inference_publication_and_next_job(
             assert finished["status"] == ("failed" if failure else "succeeded")
             assert finished["progress_percent"] == (99 if failure else 100)
             assert client.get(f"/jobs/{job_id}/result").status_code == (409 if failure else 200)
-            # A fresh API instance reads the persisted value from the same database.
             with TestClient(create_app(settings)) as restarted:
                 assert (
                     restarted.get(f"/jobs/{job_id}").json()["progress_percent"]
@@ -83,14 +80,14 @@ def test_http_progress_during_inference_publication_and_next_job(
 def test_interrupted_progress_is_retained_and_terminal_updates_are_ignored(settings, wav_bytes):
     with TestClient(create_app(settings)) as client:
         job_id = client.post("/jobs", files={"file": ("one.wav", wav_bytes)}).json()["job_id"]
-        store = JobStore(settings)
+        store = SQLiteJobRepository(settings)
         store.update_progress(job_id, 80)  # Queued jobs cannot receive progress.
-        assert store.get(job_id)["progress_percent"] == 0
+        assert store.get(job_id).progress_percent == 0
         store.claim()
         store.update_progress(job_id, -10)
         store.update_progress(job_id, 55)
         store.update_progress(job_id, 20)
-        store.recover()
+        store.fail_interrupted_jobs()
         store.update_progress(job_id, 100)
         state = client.get(f"/jobs/{job_id}").json()
         assert state["status"] == "failed"
@@ -111,21 +108,19 @@ def test_legacy_database_upgrade_preserves_jobs_and_is_repeatable(settings):
                 "INSERT INTO jobs(id,status,suffix,created_at) VALUES(?,?,'.wav',1)",
                 (status, status),
             )
-    store = JobStore(settings)
+    store = SQLiteJobRepository(settings)
     store.update_progress("running", 42)
-    store = JobStore(settings)
-    assert store.get("queued")["progress_percent"] == 0
-    assert store.get("failed")["progress_percent"] == 0
-    assert store.get("running")["progress_percent"] == 42
-    assert store.get("succeeded")["progress_percent"] == 100
+    store = SQLiteJobRepository(settings)
+    assert store.get("queued").progress_percent == 0
+    assert store.get("failed").progress_percent == 0
+    assert store.get("running").progress_percent == 42
+    assert store.get("succeeded").progress_percent == 100
     store.update_progress("succeeded", 60)
-    assert store.get("succeeded")["progress_percent"] == 100
+    assert store.get("succeeded").progress_percent == 100
 
 
 @pytest.mark.parametrize("mode", ["sequential", "batched"])
 def test_whisper_reports_progress_before_consuming_next_segment(settings, tmp_path, mode):
-    # Construct the adapter without loading weights. The upstream iterator checks
-    # that each update is delivered before the next segment is requested.
     engine = object.__new__(WhisperEngine)
     engine.profile = settings.model_copy(update={"mode": mode}).resolve_profile()
     engine.runtime_capability = {}

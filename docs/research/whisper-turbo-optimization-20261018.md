@@ -8,7 +8,7 @@ The owner's later instruction restricts real-recording experiments to Formal Wor
 
 ## What this repository already establishes
 
-The current engine uses faster-whisper 1.2.1/CTranslate2, CPU INT8, four threads, beam five, automatic language detection, VAD, and segment timestamps. The persistent worker already reuses its loaded model. The adapter discards engine diagnostics when converting results to the project's `Segment` objects. See [engine](../../src/stt_services/engines/whisper.py), [pipeline](../../src/stt_services/pipeline.py), [architecture](../../.scratch/stt-mvp/architecture.md), and [specification](../../.scratch/stt-mvp/spec.md).
+The current engine uses faster-whisper 1.2.1/CTranslate2, CPU INT8, four threads, beam five, automatic language detection, VAD, and segment timestamps. The persistent worker already reuses its loaded model. The adapter discards engine diagnostics when converting results to the project's `Segment` objects. See [engine](../../src/stt_services/engines/whisper.py), [pipeline](../../src/stt_services/transcription/pipeline.py), [architecture](../../.scratch/stt-mvp/architecture.md), and [specification](../../.scratch/stt-mvp/spec.md).
 
 The [existing baseline](../../benchmarks/reports/20261017-turbo-cpu.md) measured 400.684 seconds of audio on an i3-12100F with eight logical CPUs: warm inference 820.576 seconds, full call 820.607 seconds, RTFx 0.4883; cold model load 11.847 seconds. Inference dominates this recording. The cold/warm difference is much larger than loading alone; CPU contention was documented, so it cannot establish an isolated cache or warm-up speedup. Full-recording human accuracy review remains absent. Ticket closure does not establish an accuracy baseline.
 

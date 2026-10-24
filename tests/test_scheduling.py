@@ -1,15 +1,13 @@
-"""Observable lifecycle scheduling through the HTTP interface."""
-
 import time
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 
 from fastapi.testclient import TestClient
 
-from stt_services import jobs
-from stt_services.api import create_app
-from stt_services.jobs import DAY
-from stt_services.worker import Worker
+from stt_services.api.app import create_app
+from stt_services.application.job_policy import DAY
+from stt_services.infrastructure import sqlite_job_repository as jobs
+from stt_services.workers.job_worker import Worker
 
 
 def test_startup_cleanup_expires_old_results(settings, engine_factory, wav_bytes, monkeypatch):
@@ -31,8 +29,7 @@ def test_startup_cleanup_expires_old_results(settings, engine_factory, wav_bytes
 def test_cleanup_runs_hourly_without_waiting_for_another_job(
     settings, engine_factory, wav_bytes, monkeypatch
 ):
-    # A clock boundary is controlled externally; observe files and API, not scheduler internals.
-    import stt_services.worker as worker_module
+    import stt_services.workers.job_worker as worker_module
 
     real_monotonic = time.monotonic
     elapsed = [0.0]
@@ -87,7 +84,7 @@ def test_heartbeat_remains_fresh_while_inference_is_blocked(settings, engine_fac
 def test_slow_cleanup_does_not_block_heartbeat(settings, engine_factory, wav_bytes, monkeypatch):
     from pathlib import Path
 
-    import stt_services.worker as worker_module
+    import stt_services.workers.job_worker as worker_module
 
     real_monotonic = time.monotonic
     elapsed = [0.0]

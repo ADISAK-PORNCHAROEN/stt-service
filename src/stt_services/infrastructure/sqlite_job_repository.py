@@ -1,5 +1,3 @@
-"""Durable, transactionally bounded FIFO jobs on a local SQLite database."""
-
 import hashlib
 import shutil
 import sqlite3
@@ -7,24 +5,17 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
 
 from filelock import FileLock, Timeout
 
+from stt_services.application.job_errors import JobQueueFull
+from stt_services.application.job_policy import DAY, terminal_retention
+from stt_services.application.job_repository import Lease
 from stt_services.config import Settings
-
-DAY = 86400
-
-
-def terminal_retention(status: str) -> int:
-    return 7 * DAY if status == "succeeded" else DAY
+from stt_services.domain.job_entity import Job, JobFailure, JobStatus, WorkerState
 
 
-class QueueFull(ValueError):
-    pass
-
-
-class JobStore:
+class SQLiteJobRepository:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         settings.prepare()
@@ -42,7 +33,6 @@ class JobStore:
                     owner TEXT NOT NULL, heartbeat_at REAL NOT NULL, status TEXT NOT NULL
                 );
             """)
-            # Serialize schema upgrades across API and worker startup on existing stores.
             db.execute("BEGIN IMMEDIATE")
             columns = {row["name"] for row in db.execute("PRAGMA table_info(jobs)")}
             if "progress_percent" not in columns:
@@ -64,32 +54,43 @@ class JobStore:
         finally:
             db.close()
 
-    def enqueue(self, job_id: str, suffix: str, staging: Path) -> None:
+    def enqueue(self, job_id: str, suffix: str, staging: Path) -> Job:
         destination = self.settings.jobs_dir / job_id
         moved = False
+        created_at = time.time()
         try:
             with self.connect() as db:
                 db.execute("BEGIN IMMEDIATE")
                 count = db.execute("SELECT count(*) FROM jobs WHERE status='queued'").fetchone()[0]
                 if count >= self.settings.max_queued:
-                    raise QueueFull("Queue is full; try again after a job starts")
+                    raise JobQueueFull("Queue is full; try again after a job starts")
                 staging.rename(destination)
                 moved = True
                 db.execute(
                     "INSERT INTO jobs(id,status,suffix,created_at) VALUES(?,?,?,?)",
-                    (job_id, "queued", suffix, time.time()),
+                    (job_id, JobStatus.QUEUED.value, suffix, created_at),
                 )
         except BaseException:
             if moved:
                 shutil.rmtree(destination, ignore_errors=True)
             raise
+        return Job(
+            id=job_id,
+            status=JobStatus.QUEUED,
+            suffix=suffix,
+            created_at=created_at,
+            started_at=None,
+            finished_at=None,
+            error=None,
+            progress_percent=0,
+        )
 
-    def get(self, job_id: str) -> dict[str, Any] | None:
+    def get(self, job_id: str) -> Job | None:
         with self.connect() as db:
             row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
-            return dict(row) if row else None
+        return self._job(row) if row else None
 
-    def claim(self) -> dict[str, Any] | None:
+    def claim(self) -> Job | None:
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
@@ -99,12 +100,21 @@ class JobStore:
                 return None
             started_at = time.time()
             db.execute(
-                "UPDATE jobs SET status='running',started_at=? WHERE id=?", (started_at, row["id"])
+                "UPDATE jobs SET status='running',started_at=? WHERE id=?",
+                (started_at, row["id"]),
             )
-            return {**dict(row), "status": "running", "started_at": started_at}
+            return Job(
+                id=row["id"],
+                status=JobStatus.RUNNING,
+                suffix=row["suffix"],
+                created_at=row["created_at"],
+                started_at=started_at,
+                finished_at=row["finished_at"],
+                error=JobFailure(row["error"]) if row["error"] else None,
+                progress_percent=row["progress_percent"],
+            )
 
     def update_progress(self, job_id: str, percent: int) -> None:
-        """Persist increasing estimates only for running jobs; success owns 100%."""
         percent = min(99, max(0, percent))
         with self.connect() as db:
             db.execute(
@@ -113,22 +123,26 @@ class JobStore:
                 (percent, job_id, percent),
             )
 
-    def finish(self, job_id: str, error: str | None = None) -> None:
+    def finish(self, job_id: str, error: JobFailure | None = None) -> None:
         with self.connect() as db:
             db.execute(
                 "UPDATE jobs SET status=?,finished_at=?,error=?,"
                 "progress_percent=CASE WHEN ? IS NULL THEN 100 ELSE progress_percent END "
                 "WHERE id=?",
-                ("failed" if error else "succeeded", time.time(), error, error, job_id),
+                (
+                    (JobStatus.FAILED if error else JobStatus.SUCCEEDED).value,
+                    time.time(),
+                    error.value if error else None,
+                    error.value if error else None,
+                    job_id,
+                ),
             )
 
-    def recover(self) -> None:
-        # Only the process holding the worker file lock may call this.
+    def fail_interrupted_jobs(self) -> None:
         with self.connect() as db:
             db.execute(
-                "UPDATE jobs SET status='failed',error='interrupted',finished_at=? "
-                "WHERE status='running'",
-                (time.time(),),
+                "UPDATE jobs SET status='failed',error=?,finished_at=? WHERE status='running'",
+                (JobFailure.INTERRUPTED.value, time.time()),
             )
 
     def heartbeat(self, owner: str, status: str) -> None:
@@ -139,22 +153,10 @@ class JobStore:
                 (owner, time.time(), status),
             )
 
-    def health(self) -> dict[str, Any]:
+    def worker_state(self) -> WorkerState | None:
         with self.connect() as db:
             row = db.execute("SELECT heartbeat_at,status FROM worker WHERE singleton=1").fetchone()
-        ready = bool(
-            row
-            and row["status"] == "ready"
-            and time.time() - row["heartbeat_at"] < self.settings.heartbeat_timeout_seconds
-        )
-        return {
-            "ready": ready,
-            "api": "ready",
-            "worker": "ready" if ready else "unavailable",
-            "model_ready": ready,
-            "heartbeat_at": row["heartbeat_at"] if row else None,
-            "heartbeat_age_seconds": max(0, time.time() - row["heartbeat_at"]) if row else None,
-        }
+        return WorkerState(row["status"], row["heartbeat_at"]) if row else None
 
     def cleanup(self, now: float | None = None) -> None:
         now = time.time() if now is None else now
@@ -165,40 +167,65 @@ class JobStore:
         for row in rows:
             age = now - row["finished_at"]
             directory = self.settings.jobs_dir / row["id"]
+            lease = self.try_acquire_lease(row["id"])
+            if lease is None:
+                continue
             try:
-                with self.result_lock(row["id"]):
-                    if age >= terminal_retention(row["status"]):
-                        self._remove(directory)
-                        with self.connect() as db:
-                            db.execute(
-                                "DELETE FROM jobs WHERE id=? AND status IN ('succeeded','failed')",
-                                (row["id"],),
-                            )
-                    elif age >= DAY:
-                        (directory / f"input{row['suffix']}").unlink(missing_ok=True)
-            except (OSError, Timeout):
-                continue  # Retry later if a download or filesystem error prevents deletion.
-        # Remove stale uploads/crash artifacts, never active/tracked directories.
+                if age >= terminal_retention(JobStatus(row["status"])):
+                    self._remove(directory)
+                    with self.connect() as db:
+                        db.execute(
+                            "DELETE FROM jobs WHERE id=? AND status IN ('succeeded','failed')",
+                            (row["id"],),
+                        )
+                elif age >= DAY:
+                    (directory / f"input{row['suffix']}").unlink(missing_ok=True)
+            except OSError:
+                continue
+            finally:
+                lease.release()
         with self.connect() as db:
             tracked = {row[0] for row in db.execute("SELECT id FROM jobs")}
         for directory in self.settings.jobs_dir.iterdir():
             try:
                 if directory.name not in tracked and now - directory.stat().st_mtime >= DAY:
                     job_id = directory.name.removeprefix(".upload-")
-                    with self.result_lock(job_id):
-                        # Admission may have committed after the earlier inventory query.
+                    lease = self.try_acquire_lease(job_id)
+                    if lease is None:
+                        continue
+                    try:
                         if self.get(job_id) is None:
                             self._remove(directory)
-            except (OSError, Timeout):
+                    finally:
+                        lease.release()
+            except OSError:
                 continue
 
-    def result_lock(self, job_id: str) -> FileLock:
+    def try_acquire_lease(self, job_id: str) -> Lease | None:
         locks = self.settings.data_dir / "locks"
-        locks.mkdir(exist_ok=True)
-        # Fixed stripes bound lock metadata even for unlimited rejected uploads on Unix,
-        # where flock lock files remain after release. Never unlink a live lock inode.
+        locks.mkdir(parents=True, exist_ok=True)
         bucket = int.from_bytes(hashlib.sha256(job_id.encode()).digest()[:2], "big") % 1024
-        return FileLock(locks / f"bucket-{bucket:04}.lock", timeout=0, thread_local=False)
+        lease = FileLock(locks / f"bucket-{bucket:04}.lock", timeout=0, thread_local=False)
+        try:
+            lease.acquire()
+        except Timeout:
+            return None
+        return lease
+
+    def result_path(self, job_id: str, suffix: str) -> Path:
+        return self.settings.jobs_dir / job_id / "result" / f"transcript.{suffix}"
+
+    def _job(self, row: sqlite3.Row) -> Job:
+        return Job(
+            id=row["id"],
+            status=JobStatus(row["status"]),
+            suffix=row["suffix"],
+            created_at=row["created_at"],
+            started_at=row["started_at"],
+            finished_at=row["finished_at"],
+            error=JobFailure(row["error"]) if row["error"] else None,
+            progress_percent=row["progress_percent"],
+        )
 
     def _remove(self, path: Path) -> None:
         root = self.settings.jobs_dir.resolve()

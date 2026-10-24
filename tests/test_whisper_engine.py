@@ -7,8 +7,8 @@ import faster_whisper
 import pytest
 
 from stt_services.config import Settings
+from stt_services.domain.transcript_entities import EngineResult
 from stt_services.engines.whisper import WhisperEngine
-from stt_services.schemas import EngineResult
 
 
 class FakeModel:

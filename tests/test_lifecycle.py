@@ -1,5 +1,3 @@
-"""Durable API lifecycle exercised without SQL or model downloads."""
-
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
@@ -8,12 +6,12 @@ from threading import Barrier, Event
 import pytest
 from fastapi.testclient import TestClient
 
-import stt_services.jobs as jobs
-from stt_services.api import create_app
+from stt_services.api.app import create_app
 from stt_services.cli import main
-from stt_services.jobs import JobStore
-from stt_services.schemas import EngineResult, Segment
-from stt_services.worker import Worker
+from stt_services.domain.transcript_entities import EngineResult, Segment
+from stt_services.infrastructure import sqlite_job_repository as jobs
+from stt_services.infrastructure.sqlite_job_repository import SQLiteJobRepository
+from stt_services.workers.job_worker import Worker
 
 DAY = 86400
 
@@ -120,7 +118,6 @@ def test_second_worker_cannot_load_or_recover_live_work(settings, engine_factory
                         with Worker(settings, forbidden_factory):
                             pytest.fail("Two workers acquired the same storage")
                     assert state(client, job_id)["status"] == "running"
-                    # Restarting just HTTP must not perform worker recovery either.
                     with TestClient(create_app(settings)) as restarted:
                         assert state(restarted, job_id)["status"] == "running"
                         assert restarted.get("/health").status_code == 200
@@ -162,7 +159,6 @@ def test_running_job_is_additional_to_queue_capacity(settings, engine_factory, w
                     release.set()
                 assert running.result(timeout=10)
             assert worker.run_once()
-            # Claiming a waiting job releases an admission slot.
             following = submit(client, wav_bytes)
             assert worker.run_once()
             assert worker.run_once()
@@ -330,7 +326,7 @@ def test_success_retention_exact_boundaries_preserve_cli_artifacts(
             format_name: client.get(f"/jobs/{job_id}/result?format={format_name}").content
             for format_name in ("json", "txt", "srt")
         }
-        store = JobStore(settings)
+        store = SQLiteJobRepository(settings)
         store.cleanup(now=completed + DAY - 0.001)
         assert input_path.read_bytes() == wav_bytes
         store.cleanup(now=completed + DAY)
@@ -374,7 +370,7 @@ def test_failed_retention_at_one_day(settings, engine_factory, wav_bytes, interr
         failed = state(client, job_id)
         assert failed["status"] == "failed"
         input_path = settings.jobs_dir / job_id / "input.wav"
-        store = JobStore(settings)
+        store = SQLiteJobRepository(settings)
         store.cleanup(now=failed["finished_at"] + DAY - 0.001)
         assert input_path.read_bytes() == wav_bytes
         assert state(client, job_id)["status"] == "failed"
@@ -405,7 +401,7 @@ def test_cleanup_excludes_old_running_and_queued_jobs(settings, engine_factory, 
                     assert entered.wait(timeout=10)
                     assert state(client, running_id)["status"] == "running"
                     future = state(client, queued_id)["created_at"] + 8 * DAY
-                    JobStore(settings).cleanup(now=future)
+                    SQLiteJobRepository(settings).cleanup(now=future)
                     assert state(client, running_id)["status"] == "running"
                     assert state(client, queued_id)["status"] == "queued"
                     for job_id in (running_id, queued_id):
@@ -448,7 +444,6 @@ def test_get_expiry_at_exact_boundary_before_cleanup(
             assert client.get(f"/jobs/{job_id}").status_code == 404
             for format_name in ("json", "txt", "srt"):
                 assert client.get(f"/jobs/{job_id}/result?format={format_name}").status_code == 404
-        # No sweep occurred: HTTP must enforce expiry independently of file removal.
         assert (settings.jobs_dir / job_id / "input.wav").is_file()
         if succeeded:
             assert (settings.jobs_dir / job_id / "result" / "transcript.json").is_file()
@@ -474,7 +469,7 @@ def test_cleanup_retries_input_deletion_failure_and_continues_other_jobs(
             return original_unlink(path, *args, **kwargs)
 
         monkeypatch.setattr(Path, "unlink", deny_once)
-        store = JobStore(settings)
+        store = SQLiteJobRepository(settings)
         store.cleanup(now=completed + DAY)
         assert denied == [protected]
         assert protected.is_file()
@@ -491,8 +486,6 @@ def test_inflight_http_download_survives_cleanup_then_expires(settings, engine_f
     app = create_app(settings)
 
     class PausedDownload:
-        """Pause public ASGI response delivery while the real download is active."""
-
         def __init__(self, app):
             self.app = app
 
@@ -514,7 +507,6 @@ def test_inflight_http_download_survives_cleanup_then_expires(settings, engine_f
 
     class LargeTranscriptEngine:
         def transcribe(self, path):
-            # Several response chunks keep the real sender under backpressure.
             return [
                 replace(segment, text=segment.text * 10000) for segment in delegate.transcribe(path)
             ]
@@ -528,13 +520,13 @@ def test_inflight_http_download_survives_cleanup_then_expires(settings, engine_f
             download = pool.submit(client.get, f"/jobs/{job_id}/result")
             try:
                 assert sending.wait(timeout=10)
-                JobStore(settings).cleanup(now=expires)
+                SQLiteJobRepository(settings).cleanup(now=expires)
                 assert (settings.jobs_dir / job_id / "result" / "transcript.json").is_file()
             finally:
                 release.set()
             response = download.result(timeout=10)
             assert response.status_code == 200
             assert response.json()["segments"]
-        JobStore(settings).cleanup(now=expires)
+        SQLiteJobRepository(settings).cleanup(now=expires)
         assert client.get(f"/jobs/{job_id}").status_code == 404
         assert client.get(f"/jobs/{job_id}/result").status_code == 404

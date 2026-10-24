@@ -15,10 +15,9 @@ from typing import Literal, cast
 import psutil
 from pydantic import BaseModel, ConfigDict, Field
 
-from stt_services.benchmark import hardware_report
 from stt_services.config import Settings
-from stt_services.pipeline import EngineFactory, Pipeline
-from stt_services.references import (
+from stt_services.evaluation.benchmark_service import hardware_report
+from stt_services.evaluation.reference_review import (
     SCORING_POLICY_DESCRIPTION,
     SCORING_POLICY_ID,
     SpokenReference,
@@ -26,6 +25,7 @@ from stt_services.references import (
     score_reference,
     summarize_quality,
 )
+from stt_services.transcription.pipeline import EngineFactory, Pipeline
 
 
 @dataclass(frozen=True)
@@ -149,18 +149,36 @@ class VerifiedRecording:
 
 
 def load_manifest(
-    path: Path, catalog: tuple[ApprovedRecording, ...] = APPROVED_RECORDINGS
+    path: Path,
+    catalog: tuple[ApprovedRecording, ...] = APPROVED_RECORDINGS,
+    *,
+    recording_id: str | None = None,
 ) -> list[VerifiedRecording]:
     manifest = EvaluationManifest.model_validate_json(path.read_bytes())
     approved = {item.id: item for item in catalog}
     identities = [item.id for item in manifest.recordings]
-    for identity in identities:
-        if identity not in approved:
-            raise ValueError(f"Recording is not authorized: {identity}")
-    if len(set(identities)) != len(identities):
-        raise ValueError("Duplicate recording identity in evaluation manifest")
-    if set(identities) != set(approved):
-        raise ValueError("Evaluation manifest must explicitly contain all authorized recordings")
+    if recording_id is not None:
+        item = approved.get(recording_id)
+        if item is None:
+            raise ValueError(f"Recording is not authorized: {recording_id}")
+        if len(manifest.recordings) != 1:
+            raise ValueError("Selected-recording manifest must contain exactly one recording")
+        entry = manifest.recordings[0]
+        if entry.id != recording_id:
+            raise ValueError(
+                f"Evaluation manifest does not match selected recording: {recording_id}"
+            )
+        approved = {recording_id: item}
+    else:
+        for identity in identities:
+            if identity not in approved:
+                raise ValueError(f"Recording is not authorized: {identity}")
+        if len(set(identities)) != len(identities):
+            raise ValueError("Duplicate recording identity in evaluation manifest")
+        if set(identities) != set(approved):
+            raise ValueError(
+                "Evaluation manifest must explicitly contain all authorized recordings"
+            )
     verified = []
     for entry in manifest.recordings:
         item = approved[entry.id]
@@ -207,13 +225,7 @@ def evaluate(
     evaluation_started = time.perf_counter()
     if not 1 <= warm_runs <= 20:
         raise ValueError("Warm-run count must be between one and twenty")
-    recordings = load_manifest(manifest, catalog)
-    if recording_id is not None:
-        if recording_id not in {recording.approved.id for recording in recordings}:
-            raise ValueError(f"Selected recording is not authorized: {recording_id}")
-        recordings = [
-            recording for recording in recordings if recording.approved.id == recording_id
-        ]
+    recordings = load_manifest(manifest, catalog, recording_id=recording_id)
     references: dict[str, SpokenReference | None] = {}
     for recording in recordings:
         reference = _load_reviewed_reference(recording)
@@ -444,8 +456,9 @@ def prepare_references(
     output_dir: Path,
     *,
     catalog: tuple[ApprovedRecording, ...] = APPROVED_RECORDINGS,
+    recording_id: str | None = None,
 ) -> None:
-    recordings = load_manifest(manifest, catalog)
+    recordings = load_manifest(manifest, catalog, recording_id=recording_id)
     if output_dir.exists():
         raise ValueError("Reference destination already exists; choose a new directory")
     drafts = []
@@ -514,9 +527,10 @@ def rescore_saved_results(
     output_dir: Path,
     *,
     catalog: tuple[ApprovedRecording, ...] = APPROVED_RECORDINGS,
+    recording_id: str | None = None,
 ) -> None:
     """Compare explicitly bound, existing result bundles without loading inference."""
-    recordings = load_manifest(manifest, catalog)
+    recordings = load_manifest(manifest, catalog, recording_id=recording_id)
     authorized = {recording.approved.id: recording for recording in recordings}
     raw_bindings = json.loads(bindings_path.read_bytes())
     bindings, binding_source = _parse_saved_result_bindings(raw_bindings)
