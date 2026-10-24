@@ -6,7 +6,7 @@ from pathlib import Path
 
 from stt_services.cli import main
 from stt_services.config import Settings
-from stt_services.evaluation import APPROVED_RECORDINGS
+from stt_services.evaluation.evaluation_service import APPROVED_RECORDINGS
 
 
 def _write_report(root, catalog_item, profile, profile_id, warm_seconds, cer):

@@ -1,15 +1,13 @@
-"""Command-line entry point; injectable inference is the test seam."""
-
 import argparse
 import logging
 import sys
 from pathlib import Path
 
-from stt_services.benchmark import benchmark
-from stt_services.comparison import compare_evaluations
 from stt_services.config import Settings
 from stt_services.engines.whisper import WhisperEngine
-from stt_services.evaluation import (
+from stt_services.evaluation.benchmark_service import benchmark
+from stt_services.evaluation.comparison_service import compare_evaluations
+from stt_services.evaluation.evaluation_service import (
     APPROVED_RECORDINGS,
     ApprovedRecording,
     authorize_media,
@@ -17,7 +15,7 @@ from stt_services.evaluation import (
     prepare_references,
     rescore_saved_results,
 )
-from stt_services.pipeline import EngineFactory, Pipeline
+from stt_services.transcription.pipeline import EngineFactory, Pipeline
 
 
 def main(
@@ -36,7 +34,7 @@ def main(
     bench.add_argument("file", type=Path)
     bench.add_argument("--output-dir", type=Path, required=True)
     bench.add_argument("--approved-only", action="store_true")
-    evaluation = commands.add_parser("evaluate", help="Evaluate the two authorized recordings")
+    evaluation = commands.add_parser("evaluate", help="Evaluate authorized recordings")
     evaluation.add_argument("--manifest", type=Path, required=True)
     evaluation.add_argument("--output-dir", type=Path, required=True)
     evaluation.add_argument("--prepare-references", action="store_true")
@@ -53,7 +51,7 @@ def main(
     comparison.add_argument("--review", type=Path, action="append", default=[])
     comparison.add_argument("--output-dir", type=Path, required=True)
     evaluation.add_argument(
-        "--recording", help="Select one authorized original; manifest stays explicit"
+        "--recording", help="Select one authorized original; manifest must contain only it"
     )
     serve = commands.add_parser("serve", help="Serve the job API on 127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
@@ -68,7 +66,12 @@ def main(
                     "Reference preparation and offline rescoring are separate operations"
                 )
             if args.prepare_references:
-                prepare_references(args.manifest, args.output_dir, catalog=recording_catalog)
+                prepare_references(
+                    args.manifest,
+                    args.output_dir,
+                    catalog=recording_catalog,
+                    recording_id=args.recording,
+                )
                 return 0
             if args.rescore_results:
                 rescore_saved_results(
@@ -76,6 +79,7 @@ def main(
                     args.rescore_results,
                     args.output_dir,
                     catalog=recording_catalog,
+                    recording_id=args.recording,
                 )
                 return 0
             settings.resolve_profile()
@@ -101,12 +105,12 @@ def main(
         if args.command == "serve":
             import uvicorn
 
-            from stt_services.api import create_app
+            from stt_services.api.app import create_app
 
             uvicorn.run(create_app(settings), host="127.0.0.1", port=args.port)
             return 0
         if args.command == "worker":
-            from stt_services.worker import Worker
+            from stt_services.workers.job_worker import Worker
 
             settings.resolve_profile()
             logging.basicConfig(level=logging.INFO)

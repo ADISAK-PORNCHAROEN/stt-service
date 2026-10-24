@@ -4,7 +4,7 @@ import wave
 import pytest
 
 from stt_services.config import ResolvedProfile, Settings
-from stt_services.schemas import Segment
+from stt_services.domain.transcript_entities import Segment
 
 
 @pytest.fixture(autouse=True)

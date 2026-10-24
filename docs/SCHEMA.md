@@ -6,7 +6,7 @@
 
 ## SQLite entities
 
-`src/stt_services/jobs.py` creates and upgrades the schema transactionally. SQLite WAL is used for concurrent API/worker access.
+`src/stt_services/infrastructure/sqlite_job_repository.py` creates and upgrades the schema transactionally. SQLite WAL is used for concurrent API/worker access. The adapter maps internal typed `Job` entities from `src/stt_services/domain/job_entity.py` to persistence rows; the repository contract lives in `src/stt_services/application/job_repository.py`.
 
 | Table | Fields/invariants | Purpose and lifecycle |
 | --- | --- | --- |
@@ -23,4 +23,4 @@ Service files live under `jobs/<job_id>/input.<extension>` and `jobs/<job_id>/re
 - CLI sources/results, caches, environment files, and external references are outside managed cleanup.
 - Schema upgrades run transactionally and preserve existing jobs. The progress migration initializes old succeeded rows to 100 and other old rows to 0 because prior progress was not recorded.
 
-The MVP architecture/spec and the implementation in `jobs.py`, `worker.py`, and `config.py` own details. For a schema change, document migration/rollback behavior, update the upgrade tests, preserve old jobs unless an accepted decision says otherwise, and verify cleanup against an isolated data directory. Never point cleanup or test fixtures at production/user data.
+The MVP architecture/spec and the implementation in `infrastructure/sqlite_job_repository.py`, `workers/job_worker.py`, and `config.py` own details. For a schema change, document migration/rollback behavior, update the upgrade tests, preserve old jobs unless an accepted decision says otherwise, and verify cleanup against an isolated data directory. Never point cleanup or test fixtures at production/user data.

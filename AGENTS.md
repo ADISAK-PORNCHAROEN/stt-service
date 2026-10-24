@@ -17,10 +17,10 @@ This project transcribes Thai and English recordings with Whisper Turbo on CPU a
 
 ## Find the source
 
-- Start at `src/stt_services/cli.py` for CLI commands and `src/stt_services/api.py` for HTTP routes.
-- Follow media admission through `uploads.py` and `audio.py`; shared inference and output through `pipeline.py`, `engines/whisper.py`, `schemas.py`, and `exporters.py`.
-- Follow durable jobs and lifecycle through `jobs.py` and `worker.py`; read `config.py` for environment-backed settings.
-- Optimization workflows start at `evaluation.py`, `comparison.py`, and `references.py`. Confirm paths and callers against current source; use targeted `rg` searches when a route is unclear.
+- Start at `src/stt_services/cli.py` for CLI commands and `src/stt_services/api/app.py` for HTTP application setup. Routes, controllers, and DTOs live under `api/routes/`, `api/controllers/`, and `api/dto/`.
+- Follow media admission through `media/upload_stager.py` and `media/audio_inspector.py`; shared inference and output through `transcription/pipeline.py`, `engines/whisper.py`, `domain/transcript_entities.py`, and `transcription/transcript_exporter.py`.
+- Follow job policy and lifecycle through `application/jobs_service.py`, `application/job_repository.py`, `domain/job_entity.py`, `infrastructure/sqlite_job_repository.py`, and `workers/job_worker.py`; read `config.py` for environment-backed settings.
+- Optimization workflows start at `evaluation/`, including `evaluation_service.py`, `comparison_service.py`, and `reference_review.py`. Confirm paths and callers against current source; use targeted `rg` searches when a route is unclear.
 - The implementation boundaries and generated API contract are summarized in `docs/ARCHITECTURE.md` and `docs/API.md`; detailed MVP ownership remains in `.scratch/stt-mvp/architecture.md`.
 
 ## Read by task
@@ -30,8 +30,8 @@ This project transcribes Thai and English recordings with Whisper Turbo on CPU a
 | Product behavior or acceptance | `PRODUCT.md`, `.scratch/stt-mvp/spec.md`, and the active feature spec/ticket |
 | Domain terms | `CONTEXT.md` |
 | Architecture or integration | `docs/ARCHITECTURE.md` and `.scratch/stt-mvp/architecture.md` |
-| HTTP/API behavior | `docs/API.md`, `src/stt_services/api.py`, and `schemas.py` |
-| Persistence or retention | `docs/SCHEMA.md`, `jobs.py`, and `worker.py` |
+| HTTP/API behavior | `docs/API.md`, `api/routes/`, `api/controllers/`, `api/dto/`, and `domain/transcript_entities.py` |
+| Persistence or retention | `docs/SCHEMA.md`, `application/job_repository.py`, `infrastructure/sqlite_job_repository.py`, and `workers/job_worker.py` |
 | Tests and quality checks | `docs/TESTING.md` and `.agents/skills/test-engineering/SKILL.md` |
 | Any application code change | `.agents/skills/test-engineering/SKILL.md` and `.agents/skills/security-review/SKILL.md` |
 | Security-sensitive change | `SECURITY.md`, `docs/SECURITY-MODEL.md`, and `.agents/skills/security-review/SKILL.md` |

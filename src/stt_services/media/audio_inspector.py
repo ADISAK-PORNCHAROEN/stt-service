@@ -1,5 +1,3 @@
-"""Validate a local media file and inspect its audio stream without a WAV copy."""
-
 import math
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
@@ -16,7 +14,7 @@ MAX_TIMELINE_SPANS = 16_384
 
 
 class InvalidMedia(ValueError):
-    """A media file does not meet the accepted input contract."""
+    pass
 
 
 @dataclass(frozen=True, slots=True)

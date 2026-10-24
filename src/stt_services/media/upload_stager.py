@@ -1,34 +1,52 @@
-"""Bounded streaming multipart uploads into application-owned storage."""
-
 import shutil
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
 
 from fastapi import HTTPException, Request
-from filelock import FileLock, Timeout
 from python_multipart import MultipartParser
 from python_multipart.multipart import parse_options_header
 
-from stt_services.audio import SUPPORTED_SUFFIXES
+from stt_services.application.job_repository import JobRepository, Lease
 from stt_services.config import Settings
-from stt_services.jobs import JobStore
+from stt_services.media.audio_inspector import SUPPORTED_SUFFIXES
 
 
-async def receive_upload(request: Request, settings: Settings) -> tuple[str, str, Path, FileLock]:
+@dataclass(slots=True)
+class StagedUpload:
+    job_id: str
+    suffix: str
+    directory: Path
+    lease: Lease
+    closed: bool = False
+
+    @property
+    def input_path(self) -> Path:
+        return self.directory / f"input{self.suffix}"
+
+    def close(self) -> None:
+        if self.closed:
+            return
+        try:
+            shutil.rmtree(self.directory, ignore_errors=True)
+        finally:
+            self.lease.release()
+            self.closed = True
+
+
+async def receive_upload(
+    request: Request, settings: Settings, repository: JobRepository
+) -> StagedUpload:
     kind, options = parse_options_header(request.headers.get("content-type", ""))
     boundary = options.get(b"boundary", b"")
     if kind != b"multipart/form-data" or not boundary or len(boundary) > 200:
         raise HTTPException(400, "Expected multipart/form-data with one file field")
-    store = JobStore(settings)
     for _ in range(16):
         job_id = uuid.uuid4().hex
-        lease = store.result_lock(job_id)
-        try:
-            lease.acquire()
+        lease = repository.try_acquire_lease(job_id)
+        if lease is not None:
             break
-        except Timeout:
-            continue
     else:
         raise HTTPException(429, "Upload storage is busy; retry shortly")
     directory = settings.jobs_dir / f".upload-{job_id}"
@@ -121,7 +139,7 @@ async def receive_upload(request: Request, settings: Settings) -> tuple[str, str
         if not size:
             raise HTTPException(422, "Empty audio file")
         stream.close()
-        return job_id, suffix, directory, lease
+        return StagedUpload(job_id, suffix, directory, lease)
     except BaseException:
         if stream:
             stream.close()

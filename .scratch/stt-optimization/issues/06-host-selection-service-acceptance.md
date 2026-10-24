@@ -1,10 +1,10 @@
 # 06: Homelab CPU portfolio acceptance
 
 What to build: Verify that the CPU-only transcription workflow completes on the owner's homelab and produce concise, honest evidence suitable for testing or a portfolio.
-Blocked by: OPT-01 and any conditional OPT-02/04/05 disposition.
-Status: In progress.
-Ready for agent: Yes; owner re-authorized homelab acceptance on 2026-10-24.
-Triage label: ready-for-agent after blockers.
+Blocked by: Future owner authorization after the current local milestone; this ticket does not auto-start when local work completes.
+Status: Blocked; outside the current scope until the owner authorizes a future homelab milestone.
+Ready for agent: No; homelab work is not authorized in the current milestone.
+Triage label: none.
 
 ## Problem
 
@@ -22,7 +22,7 @@ Run both approved full recordings on the homelab with the CPU INT8 baseline or a
 
 ## Implementation decisions
 
-Use only Formal Words and Conversation with Kob. Run one through CLI and the other through the existing API/worker flow, so both entry paths and both authorized sources are demonstrated without repeating every recording through every entry point. Use CPU INT8 unless OPT-02 proves a needed candidate; use the same effective profile for both paths. Confirm each call finishes and publishes all outputs without an out-of-memory or partial-success result.
+This historical proposal used both Formal Words and Conversation with Kob. Any future homelab milestone requires new owner authorization and must define its own approved inputs, runtime profile, and acceptance evidence. The current project milestone uses Formal Words locally and does not authorize homelab execution.
 
 Record host CPU/RAM, software/model revision, effective profile, external wall time through artifact publication and retrieval, RTFx, and peak process and system memory. For API/worker, record upload, queue, processing, and download separately. Start process-memory observation before worker model preload and continue through job completion so the reported peak includes the loaded model. One complete call per recording is sufficient for portfolio completion. Use the existing repeated-comparison workflow only when claiming a repeatable speed improvement. No RTFx threshold, GPU comparison, second host, batch matrix, production availability, or production SLA is part of acceptance.
 

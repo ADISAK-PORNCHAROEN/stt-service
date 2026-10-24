@@ -1,19 +1,21 @@
-"""Media and request validation through the CLI and HTTP boundaries."""
-
+import asyncio
 import io
+from types import SimpleNamespace
 
 import av
 import pytest
 from fastapi.testclient import TestClient
 
-from stt_services.api import create_app
+import stt_services.media.upload_stager as upload_stager
+from stt_services.api.app import create_app
 from stt_services.cli import main
-from stt_services.worker import Worker
+from stt_services.infrastructure.sqlite_job_repository import SQLiteJobRepository
+from stt_services.media.upload_stager import receive_upload
+from stt_services.workers.job_worker import Worker
 
 
 @pytest.fixture
 def video_only_mp4():
-    """A real, decodable video container with no audio stream."""
     buffer = io.BytesIO()
     with av.open(buffer, mode="w", format="mp4") as container:
         stream = container.add_stream("mpeg4", rate=1)
@@ -31,7 +33,6 @@ def video_only_mp4():
 
 @pytest.fixture
 def local_playlist(tmp_path):
-    """An offline HLS playlist with a real local audio segment."""
     segment = tmp_path / "private-audio.ts"
     with av.open(str(segment), mode="w", format="mpegts") as container:
         stream = container.add_stream("mp2", rate=48000)
@@ -145,6 +146,34 @@ def test_streamed_upload_enforces_byte_limit_without_content_length(settings, wa
         assert "content-length" not in response.request.headers
         assert response.status_code == 413, response.text
     assert list(configured.jobs_dir.iterdir()) == []
+
+
+def test_cancelled_upload_removes_staging_and_releases_lease(settings, monkeypatch):
+    repository = SQLiteJobRepository(settings)
+    job_id = "a" * 32
+    monkeypatch.setattr(upload_stager.uuid, "uuid4", lambda: SimpleNamespace(hex=job_id))
+
+    class CancelledRequest:
+        headers = {"content-type": "multipart/form-data; boundary=test"}
+
+        async def stream(self):
+            yield (
+                b"--test\r\n"
+                b'Content-Disposition: form-data; name="file"; filename="audio.wav"\r\n'
+                b"Content-Type: audio/wav\r\n\r\n"
+            )
+            yield b"partial upload"
+            raise asyncio.CancelledError
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(receive_upload(CancelledRequest(), settings, repository))
+
+    assert list(settings.jobs_dir.iterdir()) == []
+    lease = repository.try_acquire_lease(job_id)
+    assert lease is not None
+    lease.release()
+    with repository.connect() as database:
+        assert database.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
 
 
 @pytest.mark.parametrize("ending", [b"", b"\r\n--unfinished", b"\r\n--test\r\n"])

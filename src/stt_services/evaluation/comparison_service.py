@@ -11,7 +11,7 @@ from typing import Literal, cast
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from stt_services.evaluation import APPROVED_RECORDINGS, ApprovedRecording
+from stt_services.evaluation.evaluation_service import APPROVED_RECORDINGS, ApprovedRecording
 
 
 class RunReview(BaseModel):

@@ -1,5 +1,3 @@
-"""Additional input, canonical output and crash-window acceptance contracts."""
-
 import io
 import os
 import wave
@@ -9,12 +7,13 @@ import av
 import pytest
 from fastapi.testclient import TestClient
 
-import stt_services.audio as audio_module
-from stt_services.api import create_app
+import stt_services.media.audio_inspector as audio_module
+from stt_services.api.app import create_app
+from stt_services.application.job_policy import DAY
 from stt_services.cli import main
-from stt_services.jobs import DAY, JobStore
-from stt_services.schemas import Segment
-from stt_services.worker import Worker
+from stt_services.domain.transcript_entities import Segment
+from stt_services.infrastructure.sqlite_job_repository import SQLiteJobRepository
+from stt_services.workers.job_worker import Worker
 
 
 def test_mp4_audio_offset_preserves_original_video_timeline(settings, engine_factory):
@@ -246,12 +245,12 @@ def test_crash_after_result_rename_is_interrupted_and_never_advertised(
             failed = client.get(f"/jobs/{job_id}").json()
             assert failed["error"] == "interrupted"
             assert client.get(f"/jobs/{job_id}/result").status_code == 409
-        JobStore(settings).cleanup(now=failed["finished_at"] + DAY)
+        SQLiteJobRepository(settings).cleanup(now=failed["finished_at"] + DAY)
         assert not (settings.jobs_dir / job_id).exists()
 
 
 def test_cleanup_removes_only_inactive_stale_orphans(settings):
-    store = JobStore(settings)
+    store = SQLiteJobRepository(settings)
     now = 2_000_000_000.0
     stale = settings.jobs_dir / ".upload-stale"
     stale.mkdir()

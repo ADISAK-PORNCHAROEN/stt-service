@@ -1,6 +1,20 @@
-# Local MVP issue tracker
+# Issue tracker and project work history
 
-This file tracks implementation work locally. Read the [specification](../../.scratch/stt-mvp/spec.md), [architecture](../../.scratch/stt-mvp/architecture.md), and [CONTEXT](../../CONTEXT.md) before changing behavior. Runtime implementation is present; delivery status below reflects actual evidence in the [verification report](../verification-20261017.md), not merely code existence.
+This file records completed local MVP work and links the current owner-approved GitHub backlog. Read the [specification](../../.scratch/stt-mvp/spec.md), [architecture](../../.scratch/stt-mvp/architecture.md), and [CONTEXT](../../CONTEXT.md) before changing behavior. Runtime implementation is present; delivery status below reflects actual evidence in the [verification report](../verification-20261017.md), not merely code existence.
+
+## Current approved milestone: local REST layering and Formal Words acceptance
+
+The owner approved the feature-scoped REST layers and the local-first scope on 2026-10-24. The parent [specification](../../.scratch/stt-rest-api/spec.md) is [GitHub issue #1](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/1). The approved verification seam is the public HTTP/CLI behavior with fake inference and real SQLite/filesystem state, followed by one local CPU run using only the existing ignored Formal Words recording/reference pair. No reference text or media is included in the public issues.
+
+| Ticket | What to build | Blocked by | Status | Ready for agent |
+| --- | --- | --- | --- | --- |
+| [#2](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/2) | Job submission through REST layers | None | Complete | Done |
+| [#3](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/3) | Job status and service health through REST layers | #2 | Complete | Done |
+| [#4](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/4) | Complete result downloads through REST layers | #2 | Complete | Done |
+| [#5](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/5) | Worker and shared-caller migration | #2, #3, #4 | Complete | Done |
+| [#6](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/6) | Local Formal Words CPU/API acceptance | #5 | Blocked — reference review pending | No; 87-cue text/timing review remains unverified |
+
+This milestone supersedes the older CPU optimization/homelab acceptance plan for current work. The two-recording homelab run, CPU-profile comparisons, batching, and language/hint experiments are not active requirements here. See the historical optimization records below for their original evidence and limitations.
 
 | Ticket | What to build | Blocked by | Status | Ready for agent |
 | --- | --- | --- | --- | --- |
@@ -25,20 +39,17 @@ The separate `QW-*` namespace is retained only as a historical record. The origi
 
 These tickets are not actionable. See the cancelled [Qwen3-ASR spec](../../.scratch/qwen3-asr/spec.md) and withdrawn [runtime ADR](../adr/0001-qwen3-asr-runtime.md) for the historical plan.
 
-## Whisper Turbo optimization
+## Historical Whisper Turbo optimization plan (superseded)
 
-The owner re-authorized the CPU-only homelab milestone on 2026-10-24. Work only on OPT-01, OPT-02, OPT-04, OPT-05, and OPT-06, using the approved full Formal Words and Conversation with Kob originals and existing publisher answers. Reference review is still incomplete. OPT-02/04/05 remain conditional on their documented evidence gates; OPT-03 GPU work stays cancelled. No deployment, GitHub Actions, model replacement, broad sweeps, or production claim is in scope.
+This former two-recording CPU/homelab milestone was superseded by the local-only Formal Words scope above. The OPT rows below are retained to explain earlier evidence and are not current work items. The owner's request to remove OPT-02 through OPT-05 from the active plan is honored; no candidate, batch, or hint experiment is scheduled. Homelab acceptance is deferred, GPU remains cancelled, and deployment is out of scope.
 
 The original audio and publisher references remain outside Git. `docs/formal-words/` contains a local copy for convenience, but Git ignores its MP4 and reference TXT. Both recordings have complete original source/reference pairs and unreviewed drafts under the external evaluation dataset and review directory. Exact file hashes and cue counts are recorded in the active spec and the current progress report. Earlier local runs and code checks do not substitute for reviewed references or homelab acceptance.
 
 See the [active spec](../../.scratch/stt-optimization/spec.md#active-milestone-update-24-october-2026-owner-re-authorization), the [implementation handoff](../../.scratch/stt-optimization/review.md#implementation-handoff), and the [current progress report](../optimization-progress-20261024.md). Preserve every existing output and use fresh external destinations.
 
-| Ticket | What to build | Blocked by | Status | Ready for agent |
+| Ticket | What to build | Blocked by | Status when superseded | Ready for agent |
 | --- | --- | --- | --- | --- |
 | [OPT-01](../../.scratch/stt-optimization/issues/01-two-recording-evaluation.md) | Reviewed references, controlled CPU baseline, and accurate CLI/API results | None | In progress | Yes; acceptance evidence is open |
-| [OPT-02](../../.scratch/stt-optimization/issues/02-cpu-decoding-profiles.md) | At most two CPU profiles if evidence shows a need | OPT-01 | Blocked | No; await OPT-01 evidence or record N/A |
-| [OPT-04](../../.scratch/stt-optimization/issues/04-batched-transcription.md) | One bounded batch check only if sequential is unsuitable | OPT-02 | Blocked | No; conditional on sequential evidence |
-| [OPT-05](../../.scratch/stt-optimization/issues/05-language-vocabulary-hints.md) | At most one hint case for a reference-confirmed error | OPT-02 | Blocked | No; conditional on reviewed error |
 | [OPT-06](../../.scratch/stt-optimization/issues/06-host-selection-service-acceptance.md) | Full two-recording CPU portfolio acceptance on i7-4770K | OPT-01 | In progress | Yes; target readiness and runs remain open |
 
 The completed MVP and cancelled GPU experiment remain closed. Conditional tickets must end with their specified N/A evidence or completed acceptance; a blocked dependency is not completion.

@@ -1,9 +1,7 @@
-"""Render complete artifacts from a canonical transcript."""
-
 import json
 from pathlib import Path
 
-from stt_services.schemas import Transcript
+from stt_services.domain.transcript_entities import Transcript
 
 
 def srt_time(seconds: float) -> str:

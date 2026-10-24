@@ -11,7 +11,7 @@ from statistics import fmean
 from typing import Any, cast
 
 from stt_services.config import ResolvedProfile, Settings
-from stt_services.schemas import EngineResult, Segment
+from stt_services.domain.transcript_entities import EngineResult, Segment
 
 
 class WhisperEngine:

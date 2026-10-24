@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from stt_services.cli import main
 from stt_services.config import ResolvedProfile, Settings
-from stt_services.schemas import EngineResult, Segment
+from stt_services.domain.transcript_entities import EngineResult, Segment
 
 
 def test_cli_uses_one_resolved_profile_and_publishes_engine_observations(tmp_path, monkeypatch):

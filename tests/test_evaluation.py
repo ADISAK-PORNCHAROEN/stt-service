@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 
 from stt_services.cli import main
-from stt_services.evaluation import ApprovedRecording
-from stt_services.schemas import Segment
+from stt_services.domain.transcript_entities import Segment
+from stt_services.evaluation.evaluation_service import ApprovedRecording, load_manifest
 
 
 @pytest.fixture
@@ -39,6 +39,35 @@ def evaluation_inputs(tmp_path, wav_bytes):
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({"schema_version": 1, "recordings": entries}), encoding="utf-8")
     return manifest, tuple(catalog)
+
+
+def _write_single_recording_manifest(source: Path, destination: Path, recording_id: str) -> Path:
+    data = json.loads(source.read_text(encoding="utf-8"))
+    entries = [entry for entry in data["recordings"] if entry["id"] == recording_id]
+    destination.write_text(
+        json.dumps({"schema_version": data["schema_version"], "recordings": entries}),
+        encoding="utf-8",
+    )
+    return destination
+
+
+def test_selected_manifest_validates_one_recording_without_reading_other_sources(
+    tmp_path, evaluation_inputs
+):
+    manifest, catalog = evaluation_inputs
+    recording_id = "fixture-final"
+    selected_manifest = _write_single_recording_manifest(
+        manifest, tmp_path / "selected-manifest.json", recording_id
+    )
+    unselected = json.loads(manifest.read_text(encoding="utf-8"))["recordings"][0]
+    Path(unselected["source"]).unlink()
+    Path(unselected["reference"]).unlink()
+
+    with pytest.raises(ValueError, match="all authorized recordings"):
+        load_manifest(selected_manifest, catalog)
+
+    verified = load_manifest(selected_manifest, catalog, recording_id=recording_id)
+    assert [recording.approved.id for recording in verified] == [recording_id]
 
 
 def test_evaluation_rejects_unknown_recording_before_engine_or_output(tmp_path, capsys):
@@ -339,7 +368,10 @@ def test_reference_preparation_keeps_english_only_cues_pending_audio_confirmatio
 def test_evaluation_can_select_one_approved_original_for_a_fresh_process_cold_run(
     tmp_path, evaluation_inputs, settings
 ):
-    manifest, catalog = evaluation_inputs
+    full_manifest, catalog = evaluation_inputs
+    manifest = _write_single_recording_manifest(
+        full_manifest, tmp_path / "fixture-final-manifest.json", "fixture-final"
+    )
     output = tmp_path / "selected"
 
     class FakeEngine:
@@ -367,6 +399,162 @@ def test_evaluation_can_select_one_approved_original_for_a_fresh_process_cold_ru
     assert report["recordings"][0]["runs"][0]["kind"] == "cold"
     assert not (output / "fixture-tuning").exists()
     assert "fresh" in report["cold_definition"]
+
+
+@pytest.mark.parametrize(
+    ("recording_id", "manifest_recording_id", "message"),
+    [
+        ("fixture-final", "fixture-tuning", "does not match selected recording"),
+        ("not-authorized", "fixture-final", "not authorized: not-authorized"),
+    ],
+)
+def test_cli_rejects_selected_manifest_mismatch_or_unknown_recording(
+    tmp_path, evaluation_inputs, capsys, recording_id, manifest_recording_id, message
+):
+    full_manifest, catalog = evaluation_inputs
+    manifest = _write_single_recording_manifest(
+        full_manifest,
+        tmp_path / f"{manifest_recording_id}-manifest.json",
+        manifest_recording_id,
+    )
+    output = tmp_path / "rejected"
+
+    def forbidden_engine(configured):
+        raise AssertionError("Manifest rejection must precede inference")
+
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(manifest),
+                "--output-dir",
+                str(output),
+                "--recording",
+                recording_id,
+            ],
+            recording_catalog=catalog,
+            engine_factory=forbidden_engine,
+        )
+        == 1
+    )
+    assert message in capsys.readouterr().err.lower()
+    assert not output.exists()
+
+
+def test_cli_requires_single_entry_when_a_recording_is_selected(
+    tmp_path, evaluation_inputs, capsys
+):
+    manifest, catalog = evaluation_inputs
+    output = tmp_path / "rejected"
+
+    def forbidden_engine(configured):
+        raise AssertionError(
+            "A selected multi-recording manifest must be rejected before inference"
+        )
+
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(manifest),
+                "--output-dir",
+                str(output),
+                "--recording",
+                "fixture-final",
+            ],
+            recording_catalog=catalog,
+            engine_factory=forbidden_engine,
+        )
+        == 1
+    )
+    assert "exactly one recording" in capsys.readouterr().err.lower()
+    assert not output.exists()
+
+
+def test_cli_prepares_and_rescores_selected_single_recording_manifest(tmp_path, evaluation_inputs):
+    full_manifest, catalog = evaluation_inputs
+    recording_id = "fixture-final"
+    manifest = _write_single_recording_manifest(
+        full_manifest, tmp_path / "fixture-final-manifest.json", recording_id
+    )
+    unselected = json.loads(full_manifest.read_text(encoding="utf-8"))["recordings"][0]
+    Path(unselected["source"]).unlink()
+    Path(unselected["reference"]).unlink()
+
+    references = tmp_path / "references"
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(manifest),
+                "--output-dir",
+                str(references),
+                "--prepare-references",
+                "--recording",
+                recording_id,
+            ],
+            recording_catalog=catalog,
+        )
+        == 0
+    )
+    prepared_manifest = references / "manifest.json"
+    reference_path = references / f"{recording_id}.reference.json"
+    reference = json.loads(reference_path.read_text(encoding="utf-8"))
+    reference["reviewed_by"] = "Fixture reviewer"
+    reference["reviewed_at"] = "2026-10-18T00:00:00Z"
+    for cue in reference["cues"]:
+        cue.update(text="Hello Apple สวัสดี Apple", reviewed=True, uncertain=False)
+    reference_path.write_text(json.dumps(reference, ensure_ascii=False), encoding="utf-8")
+
+    class FakeEngine:
+        def transcribe(self, path):
+            return [Segment(0.125, 0.875, "Hello Apple สวัสดี Apple")]
+
+    saved_results = tmp_path / "saved-results"
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(prepared_manifest),
+                "--output-dir",
+                str(saved_results),
+                "--recording",
+                recording_id,
+            ],
+            recording_catalog=catalog,
+            engine_factory=lambda configured: FakeEngine(),
+        )
+        == 0
+    )
+
+    def forbidden_engine(configured):
+        raise AssertionError("Offline rescoring must not construct inference")
+
+    rescored = tmp_path / "rescored"
+    assert (
+        main(
+            [
+                "evaluate",
+                "--manifest",
+                str(prepared_manifest),
+                "--rescore-results",
+                str(saved_results / "evaluation.json"),
+                "--output-dir",
+                str(rescored),
+                "--recording",
+                recording_id,
+            ],
+            recording_catalog=catalog,
+            engine_factory=forbidden_engine,
+        )
+        == 0
+    )
+    report = json.loads((rescored / "comparison.json").read_text(encoding="utf-8"))
+    assert {result["recording_id"] for result in report["results"]} == {recording_id}
 
 
 def test_real_model_cli_guard_rejects_unknown_media_before_decoding(tmp_path, settings, capsys):

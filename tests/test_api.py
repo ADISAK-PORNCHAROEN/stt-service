@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from stt_services.api import create_app
-from stt_services.worker import Worker
+from stt_services.api.app import create_app
+from stt_services.workers.job_worker import Worker
 
 
 def test_upload_queue_worker_and_json_download(settings, engine_factory, wav_bytes):

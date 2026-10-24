@@ -1,5 +1,3 @@
-"""Engine-independent transcript contract."""
-
 import math
 from dataclasses import asdict, dataclass, field
 from typing import Literal

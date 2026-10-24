@@ -1,5 +1,3 @@
-"""A complete local transcription behind one reusable interface."""
-
 import json
 import math
 import platform
@@ -14,11 +12,11 @@ from typing import Protocol, runtime_checkable
 
 import psutil
 
-from stt_services.audio import inspect_audio
 from stt_services.config import Settings
+from stt_services.domain.transcript_entities import EngineResult, RunMetrics, Segment, Transcript
 from stt_services.engines.whisper import WhisperEngine
-from stt_services.exporters import write_exports
-from stt_services.schemas import EngineResult, RunMetrics, Segment, Transcript
+from stt_services.media.audio_inspector import inspect_audio
+from stt_services.transcription.transcript_exporter import write_exports
 
 
 class Engine(Protocol):

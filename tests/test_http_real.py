@@ -1,5 +1,3 @@
-"""Optional actual-process HTTP/worker acceptance with cached model weights."""
-
 import json
 import os
 import subprocess
@@ -11,7 +9,7 @@ import httpx
 import psutil
 import pytest
 
-from stt_services.evaluation import authorize_media
+from stt_services.evaluation.evaluation_service import authorize_media
 
 
 def stop_tree(process):
