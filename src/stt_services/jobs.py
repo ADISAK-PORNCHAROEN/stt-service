@@ -42,6 +42,14 @@ class JobStore:
                     owner TEXT NOT NULL, heartbeat_at REAL NOT NULL, status TEXT NOT NULL
                 );
             """)
+            # Serialize schema upgrades across API and worker startup on existing stores.
+            db.execute("BEGIN IMMEDIATE")
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(jobs)")}
+            if "progress_percent" not in columns:
+                db.execute(
+                    "ALTER TABLE jobs ADD COLUMN progress_percent INTEGER NOT NULL DEFAULT 0"
+                )
+                db.execute("UPDATE jobs SET progress_percent=100 WHERE status='succeeded'")
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
@@ -95,11 +103,23 @@ class JobStore:
             )
             return {**dict(row), "status": "running", "started_at": started_at}
 
+    def update_progress(self, job_id: str, percent: int) -> None:
+        """Persist increasing estimates only for running jobs; success owns 100%."""
+        percent = min(99, max(0, percent))
+        with self.connect() as db:
+            db.execute(
+                "UPDATE jobs SET progress_percent=? "
+                "WHERE id=? AND status='running' AND progress_percent<?",
+                (percent, job_id, percent),
+            )
+
     def finish(self, job_id: str, error: str | None = None) -> None:
         with self.connect() as db:
             db.execute(
-                "UPDATE jobs SET status=?,finished_at=?,error=? WHERE id=?",
-                ("failed" if error else "succeeded", time.time(), error, job_id),
+                "UPDATE jobs SET status=?,finished_at=?,error=?,"
+                "progress_percent=CASE WHEN ? IS NULL THEN 100 ELSE progress_percent END "
+                "WHERE id=?",
+                ("failed" if error else "succeeded", time.time(), error, error, job_id),
             )
 
     def recover(self) -> None:

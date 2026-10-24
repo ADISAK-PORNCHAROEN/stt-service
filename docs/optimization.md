@@ -1,6 +1,6 @@
 # Guarded Whisper optimization workflow
 
-The approved specification and six tickets are indexed in the local issue tracker. Only the full original Formal Words recording (aC-QbxZB7RU) and Conversation with Kob recording (8qcinxUA4YA) are authorized real-recording inputs for this work. File presence, folder membership, or an inherited media environment variable does not authorize another recording.
+The active milestone uses the full Formal Words and Conversation with Kob originals for CPU-only homelab accuracy/API acceptance. Keep source media, publisher answers, reviewed references, manifests, and result bundles outside Git. See the [current scope](../.scratch/stt-optimization/spec.md#active-milestone-update-24-october-2026-owner-re-authorization) and [issue tracker](agents/issue-tracker.md).
 
 ## Follow-up research and proposed structure
 
@@ -8,31 +8,13 @@ The [quality/latency follow-up research](research/stt-quality-performance-follow
 
 ## Current commands
 
-Use the root uv environment and the machine-specific dotenv file. All media, publisher transcripts, reviewed references, manifests, and result bundles stay outside Git. Choose a new destination for each command.
+Use the root uv environment and the machine-specific dotenv file. Keep all authorized originals and answer files in external data storage. Choose a new destination for each command.
 
-The evaluation manifest must explicitly contain both authorized identities, original source paths, matching publisher-reference paths, and their frozen roles. Content hashes are checked against the approved catalog, rather than trusting hashes supplied by a manifest. There is no command-line option to replace that catalog. The injectable catalog on the Python CLI entry is for generated correctness fixtures at the existing test seam.
+The private two-entry evaluation manifest must explicitly contain only the authorized identities, source paths, matching publisher references, and frozen roles. Keep it under the external data directory; do not commit source paths or reviewed reference text. Content hashes are checked against the approved catalog, rather than trusting hashes supplied by a manifest. There is no command-line option to replace that catalog. The injectable catalog on the Python CLI entry is for generated correctness fixtures at the existing test seam.
 
-```json
-{
-  "schema_version": 1,
-  "recordings": [
-    {
-      "id": "aC-QbxZB7RU",
-      "source": "D:/ai-stt/datasets/stt-evaluation-20261018-011855/aC-QbxZB7RU/video.mp4",
-      "reference": "D:/ai-stt/datasets/stt-evaluation-20261018-011855/aC-QbxZB7RU/reference.original.txt",
-      "role": "tuning"
-    },
-    {
-      "id": "8qcinxUA4YA",
-      "source": "D:/ai-stt/datasets/stt-evaluation-20261018-011855/8qcinxUA4YA/video.mp4",
-      "reference": "D:/ai-stt/datasets/stt-evaluation-20261018-011855/8qcinxUA4YA/reference.original.srt",
-      "role": "final"
-    }
-  ]
-}
-```
+Keep a private manifest beside neither the originals nor the review drafts. It should bind Formal Words (`aC-QbxZB7RU`, role `tuning`) and Conversation with Kob (`8qcinxUA4YA`, role `final`) to their existing files by explicit paths. Do not use the broad source-download manifest because it includes unauthorized material.
 
-Relative paths resolve against the manifest's own directory. Duplicate/unknown identities, changed originals, mismatched publisher references, changed roles, and wildcard selections are rejected. The run rechecks bound file identities after media validation, model loading, inference, and before publication. A detected replacement invalidates the evaluation.
+Store the manifest and review drafts outside Git under the data root configured by `.env.local`. Relative paths resolve against the manifest's directory. Duplicate/unknown identities, changed originals, mismatched publisher references, changed roles, and wildcard selections are rejected. The run rechecks bound file identities after media validation, model loading, inference, and before publication. A detected replacement invalidates the evaluation.
 
 ## Startup profiles
 
@@ -46,9 +28,9 @@ $env:STT_CPU_THREADS = '2'
 uv run --env-file .env.local stt evaluate --manifest <approved-manifest.json> --recording aC-QbxZB7RU --output-dir <new-profile-run>
 ```
 
-For GPU trials, set `STT_DEVICE=cuda` and a supported `STT_COMPUTE_TYPE` such as `float16` or `int8_float16`. The adapter checks visible CUDA devices and supported compute types before downloading/loading the model, and it never falls back to CPU. A returned result distinguishes capability discovery, model load, and completed inference. Device memory uses boundary samples from `nvidia-smi`; it is device-wide and may include other processes or miss brief peaks.
+The explicit GPU command path remains documented in the implementation, but GPU trials are outside the active homelab portfolio scope.
 
-The batched path is explicit with `STT_MODE=batched` and `STT_BATCH_SIZE=1`, `2`, or `4`. It reports that previous-text conditioning and retry thresholds are ignored by the pinned batched implementation, that only the first temperature is used, and that segment timestamps remain enabled. It builds a new VAD argument dictionary per transcription call. The current profile rejects batched mode with VAD disabled: the pinned batched API does not provide the sequential API's default full-file clip range for long recordings. Batch one is the path control before comparing larger batches.
+The codebase still contains a batched path from earlier work. It is outside the current milestone and has no active ticket.
 
 ## Reference preparation
 
@@ -56,7 +38,7 @@ The batched path is explicit with `STT_MODE=batched` and `STT_BATCH_SIZE=1`, `2`
 uv run --env-file .env.local stt evaluate --manifest <approved-manifest.json> --output-dir <new-reference-directory> --prepare-references
 ```
 
-This does not load inference. It creates one reference JSON and one review Markdown per recording, plus a manifest pointing to those drafts. Publisher originals are not edited.
+This does not load inference. It creates one reference JSON and one review Markdown per recording, plus a manifest pointing to those drafts. The two answer files and review drafts already exist in the configured external data directory, so reuse them instead of regenerating. Publisher originals are not edited.
 
 The first Thai-containing publisher line is a provisional speech suggestion; a cue without Thai retains its first line and is flagged uncertain. This is deliberately not an automatic determination of what was spoken. For each cue:
 
@@ -64,30 +46,53 @@ The first Thai-containing publisher line is a provisional speech suggestion; a c
 2. Retain spoken English, including English-only cues; remove only unspoken translations and romanization.
 3. Mark `reviewed` true only after checking that cue. Clear `uncertain` only when the speech is sufficiently clear; explain unresolved passages in notes.
 4. Record the actual reviewer and an ISO date/time with timezone. Do not invent a review identity or mass-approve unchecked cues.
-5. Keep subtitle-boundary and important-error review separate. A checked reference is not evidence that a candidate's timestamps or names/numbers are correct.
+5. Check each reference cue's start and end against the original speech. Record checked boundaries and any corrected times or uncertain edges in the external review draft. `timing_reviewed` means that someone checked the cue against the audio; it does not certify candidate subtitle timing.
+6. Review candidate subtitle boundaries and important errors separately. Record names, numbers, omissions, insertions during silence, and repeated text. A checked reference does not prove that a candidate's timestamps or important words are correct.
 
 Retain every publisher cue identity and its original `publisher_lines`, including unreviewed or uncertain cues. A truncated or altered publisher inventory is rejected before inference. Correct the proposed `text`, review flags, notes, and reviewed timing separately; do not delete unresolved cues to inflate coverage.
 
 An incomplete review produces `pending_review` and no CER/WER. A complete reviewed reference permits numerical text scoring, while candidate important-error and timing acceptance still remain pending.
 
-## Controlled baseline
+## Local functional run
 
-Run each recording in its own fresh CLI process for independent cold measurements, with no simultaneous tests, inference, or other heavy workloads. Each command performs one initial load and three warm full-file runs reusing the same model instance. All outputs must be new.
+The 23 October local run completed Formal Words through the CLI and Conversation with Kob through the local API and persistent worker. These runs show that both entry paths can complete; they do not prove reference-backed accuracy. The current local gate is to review both answers against speech and confirm the API result is accurate.
+
+Label these outputs as local functional evidence. This workstation is not the i7-4770K homelab, and these runs do not complete OPT-01/OPT-06, establish reference-backed accuracy, or justify conditional optimization work. Package and deploy with Docker only after this local workflow has been verified.
+
+## Homelab acceptance run
+
+For the portfolio acceptance, make one complete inference call for each approved full recording. Use the CLI for one recording and the API with the persistent worker for the other. One call per original covers both supported paths. Run the calls serially on the homelab with no other heavy workload. Start external process-tree and system memory observation before worker model loading and continue through job completion so the recorded sample includes preload. The output JSON records the resolved profile; verify it matches the CPU INT8 baseline before accepting the run.
+
+Apply these process-local overrides in each PowerShell terminal that starts the CLI, API, or worker. Repeat the block in each terminal because environment variables do not cross terminal sessions. This resets experimental `.env.local` values such as the local no-repeat and VAD settings.
+
+Sequential mode defaults to batch size 1. Leave `STT_BATCH_SIZE` unset for this baseline; setting its numeric value through the current environment-backed configuration fails validation.
+
+Use an absent output directory for the CLI call. Keep the approved full source path from the external manifest.
 
 ```powershell
 $env:STT_MODEL = 'turbo'
+$env:STT_DEVICE = 'cpu'
+$env:STT_COMPUTE_TYPE = 'int8'
 $env:STT_CPU_THREADS = '4'
-uv run --env-file .env.local stt evaluate --manifest <approved-manifest.json> --recording aC-QbxZB7RU --output-dir <new-formal-baseline-directory>
-uv run --env-file .env.local stt evaluate --manifest <approved-manifest.json> --recording 8qcinxUA4YA --output-dir <new-kob-baseline-directory>
+$env:STT_BEAM_SIZE = '5'
+$env:STT_MODE = 'sequential'
+$env:STT_LANGUAGE_MODE = 'auto'
+$env:STT_CONDITION_ON_PREVIOUS_TEXT = 'true'
+$env:STT_TEMPERATURE_ZERO = 'false'
+$env:STT_NO_REPEAT_NGRAM_SIZE = '0'
+$env:STT_VAD_ENABLED = 'true'
+$env:STT_VAD_THRESHOLD = '0.5'
+$env:STT_VAD_MIN_SILENCE_DURATION_MS = '2000'
+$env:STT_VAD_SPEECH_PAD_MS = '400'
+Remove-Item Env:STT_INITIAL_PROMPT, Env:STT_HOTWORDS -ErrorAction SilentlyContinue
+uv run --env-file .env.local stt transcribe <approved-full-source> --approved-only --output-dir <new-cli-output>
 ```
 
-The second command starts only after the first has completed. Without `--recording`, both originals are evaluated serially in one process; later instance loading is correctly labeled `model_load`, not an independent cold start. Keep download/cache conditions explicit.
+Use the other approved original for the API and worker path. Check its full-file SHA-256 against the approved manifest before upload and after job completion. The general `/jobs` API does not enforce the evaluation allowlist, so use the approved source manually. Start `stt serve` and `stt worker` in separate terminals, applying the same environment block in both. Submit one full recording, wait for a succeeded job, then download JSON, TXT, and SRT. Follow the [README run instructions](../README.md) and the [HTTP API contract map](API.md). Replace the README example media with the other approved original. Do not submit a second job for the same recording.
 
-Per-run `wall_seconds` covers media validation through final JSON/TXT/SRT publication and caller return, including model load when needed. Authorization hashing/reference preflight, evaluation/scoring overhead, and total evaluation wall time are separate report fields. The internal transcript total ends earlier and must not be substituted for full caller time. A CLI run has no service queue wait.
+The basic acceptance does not require RTFx to reach one or repeated runs. Use `stt evaluate` and the comparison workflow only when a measured timing or reviewed quality issue justifies a candidate, or when making a repeatable performance-improvement claim. Those runs add inference calls and are not part of the basic portfolio path.
 
-The report records hardware, actual run metadata, host RSS, warm median/range, full-call RTFx, and whether each recording met the real-time objective. Approximate other-process CPU busy time is reported to help identify contention; counters alone cannot certify an idle host. An RTFx below one is below the objective even when faster than a previous run.
-
-Individual calls retain their quality results. The recording summary keeps the worst observed value for each error measure across all cold/model-load and warm calls, rather than presenting only the last call. Measures may come from different calls; inspect individual bundles for their corresponding transcripts. Manual candidate names/numbers and timing review remains separate.
+Keep direct transcription, API upload, queue wait, worker processing, and artifact download time distinct. Measure CLI wall time from process launch through successful publication and return. Measure API acceptance through retrieval of all three artifacts. The transcript's `total_seconds` stops before final JSON publication, so it is not the full-call wall time. The worker loads its model before polling jobs, and its per-job memory sampler excludes that preload. Start process-memory observation before worker startup and continue through job completion. Record both process and system memory. A successful result bundle does not by itself prove speech accuracy or subtitle timing.
 
 ## Scoring policy
 
@@ -97,7 +102,7 @@ The initial policy is `nfc-casefold-projections-v1`. Apply Unicode NFC, case-fol
 - English WER projects ASCII English word tokens, preserving internal apostrophes; numeric tokens are reported separately because their language assignment is ambiguous.
 - Report substitutions, deletions, insertions, and reference-unit counts, including insertions against an empty group. A zero-length reference group has no defined error rate and is not a passing group.
 - Projection scores do not prove correct ordering between languages. Normalized full-text CER, numeric changes, and manual names/numbers/omission/repetition review are necessary complements.
-- No whole-recording accuracy pass is inferred from unreviewed or uncertain reference cues. These two recordings cannot establish absent workload categories or broad population accuracy.
+- No whole-recording accuracy pass is inferred from unreviewed or uncertain reference cues. Formal Words cannot establish absent workload categories or broad population accuracy.
 
 ## Other real-model checks
 
@@ -113,16 +118,16 @@ When the reference review changes, rescore saved runs without loading a model. P
 uv run --env-file .env.local stt evaluate --manifest <reviewed-manifest.json> --rescore-results <saved-evaluation-directory/evaluation.json> --output-dir <new-rescore-directory>
 ```
 
-This checks each saved JSON/TXT/SRT bundle for consistency and writes a new comparison destination. For a legacy transcript without an embedded source hash, an explicit binding document can name each `recording_id`, approved `source_sha256`, and exact `transcript_json` path. The report labels that source binding as operator-attested legacy provenance.
+This checks each saved JSON/TXT/SRT bundle for consistency and writes a new comparison destination. For the single-call CLI and API portfolio outputs, create an explicit binding document with one entry per result. Include `recording_id`, the approved `source_sha256`, and the exact `transcript_json` path. The report labels a result without an embedded source hash as operator-attested legacy provenance. Offline rescoring adds no inference calls.
 
-Each full evaluation also writes `review-template.json`. Reviewers fill a row only after checking its exact result hash against the full original and record reviewer/time, important-error findings, boundary regressions, and host-isolation evidence for that run. The comparison rejects duplicate evaluation reports or transcript result hashes, carries each run's observed other-CPU time forward, and stays pending until warm-run isolation is reviewed; any recorded contention blocks acceptance. Then compare the baseline and candidate reports:
+Each full evaluation also writes `review-template.json`. Reviewers fill a row only after checking its exact result hash against the full original and record reviewer/time, important-error findings, boundary regressions, and host activity for that run. The repeated comparison path is optional for the portfolio demo; use it when making a repeatable speed-improvement claim. Then compare the baseline and candidate reports:
 
 ```powershell
 uv run --env-file .env.local stt compare --baseline <baseline/evaluation.json> --candidate <candidate/evaluation.json> --review <baseline/review-template.json> --review <candidate/review-template.json> --output-dir <new-comparison-directory>
 ```
 
-Repeat `--baseline` or `--candidate` for separate recording reports from the same profile and host. The comparison validates saved transcript hashes, source identity, the baseline profile, host, model revision, reference revision, and scoring policy. It reports medians/ranges, full-call RTFx, RSS/device-memory observations, reference units, text variability, quality differences, and human-review state. It does not run inference or promote a profile. Missing reviews, fewer than three warm runs, a changed host, or an unreviewed reference cannot produce an acceptance disposition.
+Repeat `--baseline` or `--candidate` for separate recording reports from the same profile and host. The comparison validates saved transcript hashes, source identity, the baseline profile, host, model revision, reference revision, and scoring policy. It reports medians/ranges, full-call RTFx, RSS, reference units, text variability, quality differences, and review state. It does not run inference or promote a profile. This formal comparison requires at least three warm runs and reviewed references; those requirements apply to repeatable performance/accuracy claims, not to the basic homelab completion demonstration.
 
 ## Acceptance status
 
-The goal is a measured speed improvement with no reviewed Thai/English or important-error regression, followed by separate service and host acceptance. Home-server evidence requires actual execution on that server. Source-code implementation, fake-inference passing checks, runtime compatibility, controlled timing, and human review are recorded independently. Consult the local ticket evidence for current progress rather than treating this workflow document as a passing result.
+Earlier local runs verified both recordings across the CLI and API/worker paths. The current milestone needs reviewed references and a reference-backed check of the local API result. Homelab and Docker acceptance remain deferred until local work is complete. See the [progress report](optimization-progress-20261023.md) for historical run evidence and limits.

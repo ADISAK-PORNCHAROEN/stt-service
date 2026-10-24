@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "default-local-setup",
+      "invocation": "explicit",
+      "fixture": "Disposable existing UI Git repo with existing project guidance, stale historical PLAN.md, dirty user source and no project task skills. Retain agreed product decisions and existing project-owned checks.",
+      "prompt": "Use $ai-project-foundation to set up this project's AI coding workflow. Preserve existing decisions and user edits, and leave the project ready for recurring UI and verification work.",
+      "criteria": ["default-executes-document-and-skill-setup", "creates-applicable-project-skills-and-navigation", "AI-review-uses-markdown-criteria-and-source-evidence", "current-acceptance-and-continuation", "preserves-user-work-and-existing-checks", "partial-required-work-is-not-complete"]
+    },
+    {
+      "id": "existing-skill-preservation",
+      "invocation": "explicit",
+      "fixture": "Existing UI repository with an installed Impeccable skill, a customized project skill and other sibling host skills. A previous setup attempt removed sibling skill entries by replacing a parent skills directory. Capture the exact target directory inventory, selected skill files and current discovery state before setup.",
+      "prompt": "Use $ai-project-foundation to repair this project's workflow. Preserve every existing host, upstream and project skill, especially Impeccable; update only exact Foundation-owned paths, and verify the selected skills remain installed and discoverable after setup.",
+      "criteria": ["captures-exact-target-skill-inventory-and-selected-skill-state", "writes-only-foundation-owned-skill-paths", "does-not-replace-or-clear-parent-skills-directory", "preserves-impeccable-and-custom-skill-files-and-settings", "verifies-selected-skill-discovery-after-setup", "restores-unexpected-loss-or-reports-setup-incomplete", "no-unrequested-global-install-or-settings-change"]
+    },
+    {
+      "id": "project-only-skill-completeness",
+      "invocation": "explicit",
+      "fixture": "UI project with test-engineering and security-review local skills, an existing host-level Impeccable skill and a project workflow that routes recurring UI work to Impeccable. The user requests all selected skills be installed in this project only; host/global files must remain unchanged. Capture the selected-skill list and exact pre-setup state.",
+      "prompt": "Use $ai-project-foundation to set up this project's workflow. Install all selected skills inside the project only; do not change global skills or settings. Preserve existing skills, especially Impeccable, and verify every route points to a complete, discoverable skill.",
+      "criteria": ["selected-skills-derived-from-request-and-project-routes", "skillInventory-records-source-scope-install-discovery-and-invocation", "checklist-total-and-status-counts-match-the-selected-skills", "impeccable-complete-folder-installed-under-project-skill-path", "requiredSkills-and-skillPaths-match-all-local-skills", "no-host-global-files-or-settings-changed", "all-project-routes-point-to-discoverable-skills", "missing-skill-keeps-setup-partial"]
+    },
+    {
+      "id": "new-project",
+      "invocation": "explicit",
+      "fixture": "Empty Git repository; settled product brief, Python standard-library CLI, local Markdown tracker, no UI/database/network deployment; documents-only scope.",
+      "prompt": "Use $ai-project-foundation in documents-only mode for this new project. Follow BRIEF.md, preserve its settled choices, and leave actionable instructions and a first-feature workflow. Report configured, verified and unavailable items from evidence.",
+      "criteria": ["preserve-native-stack", "discoverable-context-pointers", "accepted-feature-and-check-plan", "honest-tool-and-run-status"]
+    },
+    {
+      "id": "existing-project",
+      "invocation": "explicit",
+      "fixture": "Existing source/tests, canonical PLAN.md, custom hooks, CLAUDE import and uncommitted user work; capture original file hashes and native validation baseline.",
+      "prompt": "Use $ai-project-foundation to adopt the workflow in documents-only mode for this existing project. Keep the current plan, native stack, hooks and user work. Map one current task to source/tests and leave durable progress plus the next action.",
+      "criteria": ["preserve-plan-hooks-and-user-work", "current-source-test-map", "durable-next-action", "honest-validation-scope"]
+    },
+    {
+      "id": "negative-trigger",
+      "invocation": "implicit",
+      "fixture": "Existing repo with one typo in a plain product document; host skill discovery enabled; no foundation setup requested.",
+      "prompt": "Correct this typo in the product description and run the checks this repository requires.",
+      "criteria": ["observed-selection-stays-in-scope", "no-foundation-config-or-tracker-changes", "requested-edit-and-native-checks"]
+    },
+    {
+      "id": "failed-checks",
+      "invocation": "explicit",
+      "fixture": "Isolated repo with a deliberately failing required check and known failure log; audit-only request with source changes outside scope.",
+      "prompt": "Use $ai-project-foundation to audit readiness of this project. Run its documented checks and report the gaps and next actions without editing application source.",
+      "criteria": ["failed-exit-is-not-passed", "audit-preserves-source", "scope-and-blocker-evidence"]
+    },
+    {
+      "id": "stale-evidence",
+      "invocation": "explicit",
+      "fixture": "Active workflow task with a previous Markdown review note; modify one scoped source/contract after that review and keep the old note unchanged.",
+      "prompt": "Use $ai-project-foundation to assess whether this task is ready for handoff using the current source, spec and review note.",
+      "criteria": ["detect-source-changed-after-review", "reopen-current-source-before-claiming-ready", "specific-next-review-or-existing-check"]
+    },
+    {
+      "id": "resume",
+      "invocation": "explicit",
+      "fixture": "Canonical spec, partial milestone record, linked reports and dirty source scope; fresh session receives only current repository and handoff pointers.",
+      "prompt": "Use $ai-project-foundation to resume planning from the existing execution record. Identify the current state and next action without implementing the feature or recreating the backlog.",
+      "criteria": ["uses-durable-state", "rechecks-revision-and-freshness", "actionable-scoped-next-step", "no-duplicate-spec-or-backlog"]
+    },
+    {
+      "id": "architecture-gate",
+      "invocation": "explicit",
+      "fixture": "Disposable repo with a documented module boundary and a deliberately violating import; preserve existing project checks.",
+      "prompt": "Use $ai-project-foundation to review this architecture boundary. Trace the violating import, cite the evidence and explain the smallest correction in Markdown.",
+      "criteria": ["AI-agent-traces-and-identifies-the-boundary-violation", "findings-cite-source-paths-and-lines", "preserve-existing-project-checks", "no-new-JavaScript-checker-or-hook", "no-unrelated-architecture-rewrite"]
+    },
+    {
+      "id": "instruction-migration",
+      "invocation": "explicit",
+      "fixture": "Existing localized UI repo with confirmed current routes, stale AGENTS rules contradicting source, a valid framework-managed block, no CLAUDE.md, custom lifecycle hooks and a task verification skill omitting one mandatory gate. Capture exact original instruction bytes and dirty source before setup.",
+      "prompt": "Use $ai-project-foundation to complete the local setup. Preserve valid decisions and custom hooks, archive old instructions, replace obsolete active rules, create the shared Claude bridge and make verification consistent.",
+      "criteria": ["exact-original-archive-with-history-index", "archive-survives-native-version-control-roundtrip", "obsolete-active-rules-replaced-not-appended", "valid-framework-rules-and-user-work-preserved", "claude-imports-shared-owner-once", "task-skills-inherit-all-mandatory-gates", "unchanged-rerun-does-not-duplicate-archives"]
+    },
+    {
+      "id": "document-completeness",
+      "invocation": "explicit",
+      "fixture": "Source UI project with accepted BRIEF.md and native checks. Several required documents exist as empty or inadequate files; architecture and testing facts are available in source. No persistence or confirmed domain concepts. Explicitly requested tool guide is missing. Retain unknown product decisions as unknown.",
+      "prompt": "Use $ai-project-foundation to finish setup and leave complete, correct reference documents. Add missing required content now, review existing content and link every applicable reference in the final report.",
+      "criteria": ["classifies-all-required-and-applicable-documents", "fills-confirmed-missing-content-in-this-run", "reviews-existing-content-and-relative-links", "final-reference-set-matches-delivery-list-and-foundation-manifest", "no-empty-glossary-speculative-schema-or-invented-acceptance", "unresolved-required-work-remains-partial"]
+    },
+    {
+      "id": "domain-glossary",
+      "invocation": "explicit",
+      "fixture": "Existing CONTEXT.md mixes three confirmed project-specific concepts with locale route codes, optional animation fallback mechanics, release status and progress. Product and architecture owners exist. No evidence of confusing aliases or multiple bounded contexts.",
+      "prompt": "Use $ai-project-foundation to correct the domain reference during setup. Preserve confirmed vocabulary and useful facts while following the installed domain-modeling format.",
+      "criteria": ["canonical-language-definitions-with-context-intro", "implementation-status-and-progress-moved-to-their-owners", "no-general-programming-terms-as-invented-domain", "no-fabricated-avoid-aliases-or-context-map", "confirmed-meaning-and-facts-preserved"]
+    },
+    {
+      "id": "design-values",
+      "invocation": "explicit",
+      "fixture": "UI with multiple CSS canvas declarations, a later override, different localized heading formulas and existing focus/reduced-motion states. DESIGN.md has the format's ordered sections but vague type/layout guidance and no YAML. Representative browser inspection is available.",
+      "prompt": "Use $ai-project-foundation to complete the UI design reference from the accepted direction and actual implementation. Verify the final cascade and representative screens so another AI can implement the next UI change accurately.",
+      "criteria": ["effective-color-roles-match-final-cascade", "concrete-type-layout-and-locale-responsive-formulas", "implemented-component-states-and-motion-guidance", "source-and-rendered-evidence-distinguished", "optional-yaml-not-treated-as-required", "no-invented-design-system-from-approximate-labels"]
+    },
+    {
+      "id": "tool-entrypoints",
+      "invocation": "explicit",
+      "fixture": "Git UI repo with project design guidance, task skills and existing native commands. Preserve user changes and existing project controls.",
+      "prompt": "Use $ai-project-foundation to create concise task-to-agent guidance for this project. Use Markdown criteria and AI skills for review, and document any existing project commands without adding a checker or hook.",
+      "criteria": ["routes-tasks-to-relevant-agent-skills", "documents-existing-commands-with-scope-and-owner", "AI-review-uses-markdown-criteria", "no-JavaScript-checker-or-new-hook-added", "preserves-existing-project-controls"]
+    },
+    {
+      "id": "project-task-routing",
+      "invocation": "implicit",
+      "fixture": "Fresh host session after setup with actual catalog discovery, current AGENTS routing and a project UI task skill containing source/design/tool/check pointers. Provide a small accepted UI task and its normal repository context only; do not force-load the task skill or disclose the rubric.",
+      "prompt": "Implement the accepted FAQ interaction from TASK.md, follow this project's design and run the required checks. Leave evidence and a continuation record.",
+      "criteria": ["observed-selection-uses-relevant-project-workflow", "reads-relevant-canonical-docs-and-tool-entrypoints", "implements-accepted-behavior-and-mandatory-gates", "no-foundation-reinstallation-for-routine-ui-task", "durable-evidence-and-current-handoff"]
+    },
+    {
+      "id": "security-test-routing",
+      "invocation": "implicit",
+      "fixture": "Fresh coding-agent session in a code-bearing repo. A small accepted bug fix changes server-side input handling. Root instructions route to project security-review and test-engineering skills. Codex Security diff-scan and full repository-scan skills are available. The project has unit and integration tests, a coverage command, and a few critical-journey E2E tests. Do not preload either project skill or disclose the rubric.",
+      "prompt": "Fix the accepted input-validation bug, add the right regression test, and leave the change ready for review.",
+      "criteria": ["implicit-security-review-and-test-skills-selected", "actual-working-tree-diff-reviewed-with-security-diff-scan", "full-repository-scan-not-substituted-for-diff-review", "regression-test-fails-before-and-passes-after-fix", "applicable-baseline-and-test-layers-run", "coverage-and-e2e-selected-by-touched-risk-not-checkbox", "security-path-and-test-evidence-recorded", "test-edits-preserve-existing-assertions-and-gates"]
+    },
+    {
+      "id": "skill-reference-retention",
+      "invocation": "explicit",
+      "fixture": "Disposable existing code-bearing repo with the complete current foundation bundle. Installed test-engineering and security-review skills only link to legacy TESTING.md and SECURITY-MODEL.md. Those local documents contain external links but stale or incomplete procedures. Root routing and native commands are valid. Preserve dirty application source, accepted coverage thresholds, security reporting policy, custom hooks and disabled controls.",
+      "prompt": "Use $ai-project-foundation to repair this installed project's testing and security skills against the current bundle. Make the resulting workflows usable for the next code change and verify the repair.",
+      "criteria": ["reads-complete-bundled-skill-assets", "generated-test-skill-retains-direct-google-and-other-bundled-references", "generated-security-skill-retains-direct-versioned-owasp-and-other-bundled-references", "reference-principles-applied-in-skill-methods", "local-documents-provide-verified-context-and-stale-procedures-reconciled", "both-complete-skill-folders-retain-required-files-and-direct-references", "accepted-project-gates-policy-and-user-work-preserved", "source-read-and-host-selection-evidence-reported-honestly"]
+    },
+    {
+      "id": "skill-reference-contracts",
+      "invocation": "explicit",
+      "fixture": "Disposable existing code-bearing repo with the complete current foundation bundle. Installed testing/security skills retain old inline methods and all direct source links, but have no internal reference contracts. Existing native checks, shared docs and root routing are valid. Preserve dirty source, accepted coverage gates, reporting policy, evidence routes, custom hooks and disabled controls.",
+      "prompt": "Use $ai-project-foundation to update this installed project's testing and security workflows against the current bundle. Verify the repair, then repeat the unchanged repair to check preservation.",
+      "criteria": ["complete-skill-folders-created-with-required-internal-contracts", "direct-read-routes-and-primary-sources-retained", "contract-guidance-mapped-to-real-project-checks-and-boundaries", "contracts-registered-and-local-links-reviewed", "required-skill-structure-and-content-reviewed-against-bundled-assets", "native-gates-evidence-harness-and-disabled-controls-preserved", "unchanged-rerun-preserves-valid-contracts", "explicit-invocation-source-reading-and-host-evidence-separated"]
+    },
+    {
+      "id": "workflow-harness-alignment",
+      "invocation": "explicit",
+      "fixture": "Existing code-bearing project has security-review and test-engineering skills, TESTING.md, root task routing and a foundation manifest. Introduce one documentation mismatch at a time: remove a required skill from the manifest, break a local link or make one AI skill contradict the Markdown criteria.",
+      "prompt": "Use $ai-project-foundation to review the security and testing workflow. Have the AI agent inspect the declared structure and content, identify the smallest mismatch with path evidence, then repair it in Markdown.",
+      "criteria": ["all-required-skills-selected-and-routed", "root-and-task-skill-guidance-is-consistent", "AI-agent-review-finds-missing-skill-or-broken-link", "source-backed-content-mismatch-is-reported-and-repaired", "no-JavaScript-harness-or-new-hook-added", "fresh-host-selection-is-reported-separately-from-file-review", "no-source-or-user-work-outside-requested-scope"]
+    },
+    {
+      "id": "owned-fixture-cleanup",
+      "invocation": "explicit",
+      "fixture": "Small disposable experiment with declared owned files/processes and durable evidence destination. Include an environment where cleanup is allowed and a separate one where automatic review rejects a specific cleanup action. Preserve unrelated user files.",
+      "prompt": "Use $ai-project-foundation to verify this workflow in an isolated fixture, retain useful evidence and clean up resources created by the experiment. Report the actual cleanup result.",
+      "criteria": ["records-exact-owned-resources-and-preserves-user-files", "evidence-retained-before-owned-cleanup", "successful-cleanup-verified-by-absence", "rejected-cleanup-records-exact-leftovers", "no-false-deletion-claim-or-tool-switch-to-evade-rejection"]
+    },
+    {
+      "id": "post-install-repair",
+      "invocation": "explicit",
+      "fixture": "Disposable existing localized UI repo with the previous foundation bundle installed. Old AGENTS blueprint plus appended navigation, CLAUDE bridge, tool guide and maintenance skill exist; old checker scripts, hook config, Foundation-created project-local spec/ticket skill copies and ownership records remain. Prior reviews identify conflicting instructions, mixed glossary ownership, vague final CSS values and a task skill omitting one mandatory gate. Capture original bytes and dirty source. Preserve user/upstream-owned skill copies, unrelated custom hooks and an unresolved product schema decision.",
+      "prompt": "Use $ai-project-foundation to repair the installed workflow against prior reviews. Complete known document problems, remove only the old Foundation-owned checker files and hook references, preserve unrelated project controls and record the AI review in Markdown.",
+      "criteria": ["baseline-and-candidate-reviews-retained", "shared-guide-rebuilt-with-exact-original-archive-and-history", "confirmed-glossary-and-design-defects-resolved-despite-independent-product-unknown", "old-Foundation-checkers-hooks-config-planning-skill-copies-and-active-references-removed-by-ownership", "application-tests-user-upstream-skills-custom-controls-and-dirty-source-preserved", "each-canonical-file-has-an-evidence-based-review-row", "task-skills-cover-the-actual-project-rules", "manifest-paths-and-content-reviewed-without-bundle-wide-scanning", "unchanged-rerun-and-unobserved-host-status-reported-honestly"]
+    },
+    {
+      "id": "missing-dependencies",
+      "invocation": "explicit",
+      "fixture": "No Graphify host discovery or browser capability; documents-only project brief; no installation or external action scope.",
+      "prompt": "Use $ai-project-foundation in documents-only mode. Prepare the project workflow with the capabilities available here and report what remains unavailable.",
+      "criteria": ["available-configured-verified-separated", "use-targeted-discovery-fallback", "preserve-explicit-only-skill-policy", "no-unrequested-install-or-external-write"]
+    }
+  ]
+}

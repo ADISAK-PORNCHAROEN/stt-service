@@ -35,6 +35,8 @@ def test_real_separate_api_and_worker_processes(tmp_path):
     media = os.environ.get("STT_TEST_MEDIA")
     if not media:
         pytest.skip("Set STT_TEST_MEDIA to a supported recording")
+    job_timeout = float(os.environ.get("STT_TEST_JOB_TIMEOUT_SECONDS", "1800"))
+    assert 0 < job_timeout <= 14400, "STT_TEST_JOB_TIMEOUT_SECONDS must be in (0, 14400]"
     authorized = authorize_media(Path(media))
     port = int(os.environ.get("STT_TEST_PORT", "18765"))
     base_url = f"http://127.0.0.1:{port}"
@@ -47,6 +49,7 @@ def test_real_separate_api_and_worker_processes(tmp_path):
     env = {**os.environ, "STT_DATA_DIR": str(tmp_path / "service-data"), "PYTHONUTF8": "1"}
     flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
     processes = []
+    progress_samples = []
     with (tmp_path / "service.log").open("w", encoding="utf-8") as log:
         try:
             for command in (["serve", "--port", str(port)], ["worker"]):
@@ -79,14 +82,38 @@ def test_real_separate_api_and_worker_processes(tmp_path):
                     authorized.assert_unchanged()
                 assert response.status_code == 202, response.text
                 job_id = response.json()["job_id"]
-                deadline = time.monotonic() + 1800
+                job_started = time.monotonic()
+                deadline = job_started + job_timeout
                 while True:
-                    status = client.get(f"/jobs/{job_id}").json()
+                    assert all(p.poll() is None for p in processes), log.name
+                    response = client.get(f"/jobs/{job_id}")
+                    assert response.status_code == 200, response.text
+                    status = response.json()
+                    percent = status["progress_percent"]
+                    assert isinstance(percent, int) and not isinstance(percent, bool)
+                    assert 0 <= percent <= 100
+                    if progress_samples:
+                        assert percent >= progress_samples[-1]["progress_percent"]
+                    sample = {
+                        "elapsed_seconds": time.monotonic() - job_started,
+                        "status": status["status"],
+                        "progress_percent": percent,
+                    }
+                    progress_samples.append(sample)
+                    with (tmp_path / "progress.jsonl").open("a", encoding="utf-8") as evidence:
+                        evidence.write(json.dumps(sample) + "\n")
+                    if status["status"] != "succeeded":
+                        assert percent < 100
                     assert status["status"] != "failed", status
                     if status["status"] == "succeeded":
+                        assert percent == 100
                         break
                     assert time.monotonic() < deadline, "Job did not finish"
                     time.sleep(0.5)
+                assert any(
+                    row["status"] == "running" and 0 < row["progress_percent"] < 99
+                    for row in progress_samples
+                ), "No intermediate real-inference progress was observed"
                 for format_name in ("json", "txt", "srt"):
                     result = client.get(f"/jobs/{job_id}/result?format={format_name}")
                     assert result.status_code == 200
@@ -96,6 +123,10 @@ def test_real_separate_api_and_worker_processes(tmp_path):
                 assert transcript["segments"]
                 assert transcript["versions"]["model_revision"] != "unreported"
                 assert transcript["metrics"]["model_load_seconds"] == 0
+                assert all(
+                    0 <= segment["start"] <= segment["end"] <= transcript["duration_seconds"]
+                    for segment in transcript["segments"]
+                )
                 assert client.get("/health").status_code == 200
                 authorized.assert_unchanged()
         finally:

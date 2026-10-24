@@ -5,6 +5,7 @@ import math
 import os
 import shutil
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from statistics import fmean
 from typing import Any, cast
@@ -79,6 +80,12 @@ class WhisperEngine:
         }
 
     def transcribe(self, path: Path) -> EngineResult:
+        return self.transcribe_with_progress(path)
+
+    def transcribe_with_progress(
+        self, path: Path, on_progress: Callable[[float], None] | None = None
+    ) -> EngineResult:
+        """Report decoded-audio seconds as upstream segments become available."""
         profile = self.profile
         target = self.batched_model if profile.mode == "batched" else self.model
         assert target is not None
@@ -92,6 +99,7 @@ class WhisperEngine:
             "multilingual": multilingual,
             "beam_size": profile.beam_size,
             "temperature": profile.temperature_schedule,
+            "no_repeat_ngram_size": profile.no_repeat_ngram_size,
             "vad_filter": profile.vad_enabled,
             "vad_parameters": vad_parameters,
             "condition_on_previous_text": profile.condition_on_previous_text,
@@ -113,7 +121,12 @@ class WhisperEngine:
         gpu_memory_after = (
             _gpu_memory_snapshot(profile.device_index) if profile.device == "cuda" else None
         )
-        raw_segments = list(raw_segments)
+        collected = []
+        for segment in raw_segments:
+            collected.append(segment)
+            if on_progress is not None:
+                on_progress(float(segment.end))
+        raw_segments = collected
         segments = [
             Segment(
                 min(float(segment.start), float(info.duration)),
@@ -163,6 +176,7 @@ class WhisperEngine:
             "cpu_threads": profile.cpu_threads if profile.device == "cpu" else None,
             "beam_size": profile.beam_size,
             "mode": profile.mode,
+            "no_repeat_ngram_size": profile.no_repeat_ngram_size,
             "batch_size": profile.batch_size if profile.mode == "batched" else 1,
             "language_mode": profile.language_mode,
             "condition_on_previous_text": effective_context,

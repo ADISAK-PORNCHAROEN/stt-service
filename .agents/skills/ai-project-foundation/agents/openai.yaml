@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Project Foundation"
+  short_description: "Create Markdown guidance and AI review skills"
+  default_prompt: "Use $ai-project-foundation in setup mode to archive and rebuild shared instructions in the new guide format, resolve known document gaps, create Markdown project skills, and have the relevant AI agents review the guidance against source. Inventory every requested and workflow-routed skill, install selected skills at the requested scope, and verify discovery and invocation policy. Create a skills checklist with the selected total and complete/incomplete counts. For project-only setup, keep selected skill installs in the project and do not change global installations/settings. Preserve all pre-existing host, upstream and project skills plus their settings/callbacks; update only exact Foundation-owned paths."

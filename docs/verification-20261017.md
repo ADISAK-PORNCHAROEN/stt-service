@@ -29,9 +29,9 @@ neither the partial review nor measurements establish a numerical accuracy pass.
 The integration command was:
 
 ```powershell
-$env:HF_HOME = 'D:\ai-stt\cache\huggingface'
-$env:STT_TEST_MEDIA = 'D:\ai-stt\audio\acceptance-15s.wav'
-uv run pytest -m integration tests/test_real_model.py tests/test_http_real.py --basetemp 'D:\ai-stt\output\integration-final-20261017' -v
+$env:HF_HOME = '[private local path]'
+$env:STT_TEST_MEDIA = '[private local path]'
+uv run pytest -m integration tests/test_real_model.py tests/test_http_real.py --basetemp '[private local path]' -v
 ```
 
 The WAV is a 15-second mono/16-kHz excerpt decoded from the supplied MP4, not a
@@ -120,3 +120,21 @@ testing is outside this deliberately localhost-only, session-free MVP.
   CER/WER and numerical accuracy claims are intentionally absent. The separate
   song sample has its own user-provided reference and does not substitute for
   this recording. Home-server performance remains unmeasured.
+
+## Revalidation — 18 October 2026
+
+The current Whisper service worktree was rechecked without changing service
+source, tests, lockfile, environment, deployment, or retained outputs.
+
+| Check | Observed result |
+| --- | --- |
+| `uv run --env-file .env.local pytest` | 75 passed, 2 integration tests deselected (17.96 seconds) |
+| `STT_TEST_MEDIA=[private local path] uv run --env-file .env.local pytest -m integration tests/test_real_model.py tests/test_http_real.py -v` | 2 passed (49.40 seconds); real Turbo CLI and separate API/worker process paths |
+| `uv run --env-file .env.local ruff check .` | Passed |
+| `uv run --env-file .env.local ruff format --check .` | Passed; 44 files already formatted |
+| `uv run --env-file .env.local mypy` | Passed; 14 production files |
+
+The integration media override was process-local and removed after the run.
+These checks confirm the current service behavior on the development PC; they
+do not measure the i7-4770K home server or establish a full-recording accuracy
+percentage. The benchmark and manual-review limits above still apply.

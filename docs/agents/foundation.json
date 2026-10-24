@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "documents": [
+    ".agents/skills/ai-project-foundation/agents/openai.yaml",
+    ".agents/skills/ai-project-foundation/assets/architecture-rules.template.md",
+    ".agents/skills/ai-project-foundation/assets/document-delivery.template.md",
+    ".agents/skills/ai-project-foundation/assets/evals/cases.json",
+    ".agents/skills/ai-project-foundation/assets/evals/run-record.template.md",
+    ".agents/skills/ai-project-foundation/assets/execution-record.template.md",
+    ".agents/skills/ai-project-foundation/assets/foundation-profile.template.json",
+    ".agents/skills/ai-project-foundation/assets/handoff.template.md",
+    ".agents/skills/ai-project-foundation/assets/project-skills/security-review/references/review-contract.md",
+    ".agents/skills/ai-project-foundation/assets/project-skills/security-review/SKILL.md",
+    ".agents/skills/ai-project-foundation/assets/project-skills/test-engineering/references/testing-contract.md",
+    ".agents/skills/ai-project-foundation/assets/project-skills/test-engineering/SKILL.md",
+    ".agents/skills/ai-project-foundation/assets/skills-checklist.template.md",
+    ".agents/skills/ai-project-foundation/assets/technical-design.template.md",
+    ".agents/skills/ai-project-foundation/assets/traceability.template.md",
+    ".agents/skills/ai-project-foundation/references/ai-agent-review.md",
+    ".agents/skills/ai-project-foundation/references/document-blueprints.md",
+    ".agents/skills/ai-project-foundation/references/execution-and-boundaries.md",
+    ".agents/skills/ai-project-foundation/references/project-workflow.md",
+    ".agents/skills/ai-project-foundation/references/schema-and-security.md",
+    ".agents/skills/ai-project-foundation/references/secure-testing-workflows.md",
+    ".agents/skills/ai-project-foundation/references/setup-contract.md",
+    ".agents/skills/ai-project-foundation/references/setup-prompts.md",
+    ".agents/skills/ai-project-foundation/references/skill-evaluation.md",
+    ".agents/skills/ai-project-foundation/references/tool-entrypoints.md",
+    ".agents/skills/ai-project-foundation/references/tooling-and-quality.md",
+    ".agents/skills/ai-project-foundation/SKILL.md",
+    ".agents/skills/security-review/references/review-contract.md",
+    ".agents/skills/security-review/SKILL.md",
+    ".agents/skills/test-engineering/references/testing-contract.md",
+    ".agents/skills/test-engineering/SKILL.md",
+    ".gitattributes",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTEXT.md",
+    "docs/agents/foundation.json",
+    "docs/agents/issue-tracker.md",
+    "docs/agents/skills-checklist.md",
+    "docs/agents/tools.md",
+    "docs/AI-FOUNDATION-REPORT.md",
+    "docs/API.md",
+    "docs/ARCHITECTURE.md",
+    "docs/history/agent-instructions/AGENTS.2026-10-23-b820ae37373c.md",
+    "docs/history/agent-instructions/AGENTS.2026-10-23-f4892cd7ab45.md",
+    "docs/history/agent-instructions/README.md",
+    "docs/SCHEMA.md",
+    "docs/SECURITY-MODEL.md",
+    "docs/TESTING.md",
+    "PRODUCT.md",
+    "SECURITY.md"
+  ],
+  "instructions": {
+    "format": "foundation-v1",
+    "guide": "AGENTS.md",
+    "bridge": "CLAUDE.md",
+    "mode": "replaced",
+    "managedBlocks": [],
+    "historyIndex": "docs/history/agent-instructions/README.md",
+    "archives": [
+      {
+        "originalPath": "AGENTS.md",
+        "path": "docs/history/agent-instructions/AGENTS.2026-10-23-f4892cd7ab45.md",
+        "sha256": "f4892cd7ab45293dfd75a0a000b681bf0baa0ffb96c3d459ec056f6071d41503"
+      },
+      {
+        "originalPath": "AGENTS.md",
+        "path": "docs/history/agent-instructions/AGENTS.2026-10-23-b820ae37373c.md",
+        "sha256": "b820ae37373ca6beaeb1dc361a1364dfe1555151c949f2ee4af1b93e1a0e79eb"
+      }
+    ]
+  },
+  "skillPaths": [
+    ".agents/skills/ai-project-foundation/SKILL.md",
+    ".agents/skills/test-engineering/SKILL.md",
+    ".agents/skills/security-review/SKILL.md"
+  ],
+  "requiredSkills": [
+    "ai-project-foundation",
+    "test-engineering",
+    "security-review"
+  ],
+  "skillChecklist": "docs/agents/skills-checklist.md",
+  "skillInventory": [
+    {
+      "name": "ai-project-foundation",
+      "scope": "project",
+      "source": "User-provided installed skill; complete package copied into project",
+      "path": ".agents/skills/ai-project-foundation/SKILL.md",
+      "invocationPolicy": "Model-invoked for setup/adoption, audits, and documents-only adoption; explicit invocation also supported.",
+      "installed": true,
+      "discoverable": {
+        "status": "verified in fresh-session catalog",
+        "evidence": "A fresh agent session catalog lists ai-project-foundation from the project .agents/skills root; host invocation was not exercised."
+      }
+    },
+    {
+      "name": "test-engineering",
+      "scope": "project",
+      "source": "Existing project-local skill adapted from bundled Foundation asset",
+      "path": ".agents/skills/test-engineering/SKILL.md",
+      "invocationPolicy": "Model-invoked for source/test changes and explicit verification requests; reads its local contract first.",
+      "installed": true,
+      "discoverable": {
+        "status": "verified in active session",
+        "evidence": "The active skill catalog includes test-engineering from the project .agents/skills root."
+      }
+    },
+    {
+      "name": "security-review",
+      "scope": "project",
+      "source": "Existing project-local skill adapted from bundled Foundation asset",
+      "path": ".agents/skills/security-review/SKILL.md",
+      "invocationPolicy": "Model-invoked for application-code, executable-configuration, dependency, or CI diffs; full-repository audit remains explicit-only.",
+      "installed": true,
+      "discoverable": {
+        "status": "verified in active session",
+        "evidence": "The active skill catalog includes security-review from the project .agents/skills root."
+      }
+    }
+  ],
+  "setupScope": "project-only",
+  "reviewedRevision": "4193036",
+  "reviewedSources": [
+    "README.md",
+    "pyproject.toml",
+    "uv.lock",
+    ".scratch/stt-mvp/spec.md",
+    ".scratch/stt-mvp/architecture.md",
+    ".scratch/stt-optimization/spec.md",
+    ".scratch/stt-optimization/issues/01-two-recording-evaluation.md",
+    ".scratch/stt-optimization/issues/06-host-selection-service-acceptance.md",
+    "docs/agents/issue-tracker.md",
+    "docs/optimization.md",
+    "docs/optimization-verification-20261018.md",
+    "src/stt_services/cli.py",
+    "src/stt_services/api.py",
+    "src/stt_services/config.py",
+    "src/stt_services/uploads.py",
+    "src/stt_services/audio.py",
+    "src/stt_services/pipeline.py",
+    "src/stt_services/engines/whisper.py",
+    "src/stt_services/schemas.py",
+    "src/stt_services/exporters.py",
+    "src/stt_services/jobs.py",
+    "src/stt_services/worker.py",
+    "src/stt_services/evaluation.py",
+    "src/stt_services/comparison.py",
+    "src/stt_services/references.py",
+    "tests/test_evaluation.py",
+    "tests/test_api.py",
+    "tests/test_lifecycle.py",
+    "tests/test_scheduling.py"
+  ]
+}

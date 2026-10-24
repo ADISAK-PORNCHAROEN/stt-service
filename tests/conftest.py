@@ -3,8 +3,17 @@ import wave
 
 import pytest
 
-from stt_services.config import Settings
+from stt_services.config import ResolvedProfile, Settings
 from stt_services.schemas import Segment
+
+
+@pytest.fixture(autouse=True)
+def isolate_profile_environment(request, monkeypatch):
+    # Ordinary cases choose their own profile; real opt-in checks inherit the
+    # operator's selected profile so they still test actual service settings.
+    if request.node.get_closest_marker("integration") is None:
+        for name in Settings.model_fields.keys() & ResolvedProfile.model_fields.keys():
+            monkeypatch.delenv(f"STT_{name.upper()}", raising=False)
 
 
 @pytest.fixture

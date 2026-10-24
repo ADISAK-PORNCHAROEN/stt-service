@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from stt_services.cli import main
-from stt_services.config import Settings
+from stt_services.config import ResolvedProfile, Settings
 from stt_services.schemas import EngineResult, Segment
 
 
@@ -79,6 +79,29 @@ def test_resolved_profile_is_immutable_and_has_stable_identity():
         assert "frozen" in str(exc).lower()
     else:
         raise AssertionError("Resolved startup profiles must be immutable")
+
+
+def test_repetition_profile_preserves_legacy_baseline_identity():
+    baseline = Settings().resolve_profile()
+    assert baseline.profile_id == "whisper-profile-v1-24b36874898eeab9e274"
+    assert "no_repeat_ngram_size" not in baseline.public_configuration
+    candidate = Settings(no_repeat_ngram_size=8).resolve_profile()
+    assert candidate.schema_version == 2
+    assert candidate.public_configuration["no_repeat_ngram_size"] == 8
+    assert candidate.profile_id != baseline.profile_id
+
+
+@pytest.mark.parametrize("size", [-1, 21])
+def test_repetition_limit_rejects_invalid_sizes(size):
+    with pytest.raises(ValidationError):
+        Settings(no_repeat_ngram_size=size)
+
+
+def test_active_repetition_limit_cannot_reuse_legacy_profile_schema():
+    values = Settings(no_repeat_ngram_size=8).resolve_profile().model_dump()
+    values["schema_version"] = 1
+    with pytest.raises(ValidationError, match="schema version 2"):
+        ResolvedProfile.model_validate(values)
 
 
 @pytest.mark.parametrize(

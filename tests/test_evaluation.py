@@ -263,7 +263,7 @@ def test_evaluation_scores_reviewed_reference_preserving_thai_tone_marks(
         ("source", "source hash"),
         ("publisher", "reference hash"),
         ("duplicate", "duplicate"),
-        ("missing", "both authorized"),
+        ("missing", "all authorized"),
         ("role", "role"),
         ("wildcard", "wildcard"),
     ],
@@ -648,7 +648,10 @@ def test_saved_results_can_be_rescored_without_constructing_inference(
 
     class FakeEngine:
         def transcribe(self, path):
-            return [Segment(0.125, 0.875, "Hello Apple สวัสดี Apple")]
+            return [
+                Segment(0.125, 0.4, "Hello Apple"),
+                Segment(0.5, 0.875, "สวัสดี Apple"),
+            ]
 
     saved_results = tmp_path / "saved-results"
     assert (
@@ -710,10 +713,9 @@ def test_saved_results_can_be_rescored_without_constructing_inference(
     assert all(item["plan_id"] for item in report["results"])
     bundle = saved_results / catalog[0].id / "03-warm"
     assert (bundle / "transcript.json").is_file()
-    assert (
-        json.loads((bundle / "transcript.json").read_text(encoding="utf-8"))["source_sha256"]
-        == catalog[0].source_sha256
-    )
+    saved_transcript = json.loads((bundle / "transcript.json").read_text(encoding="utf-8"))
+    assert saved_transcript["source_sha256"] == catalog[0].source_sha256
+    assert len(saved_transcript["segments"]) == 2
 
     invalid_bindings = json.loads(legacy_bindings_path.read_text(encoding="utf-8"))
     invalid_bindings["results"][0]["source_sha256"] = "0" * 64

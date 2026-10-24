@@ -1,9 +1,9 @@
 # 04: Compare batched transcription while preserving text and timing
 
-What to build: An operator can explicitly compare sequential and batched Turbo transcription through the same public workflow and inspect complete result bundles, timing/resource costs, and reviewed text/timestamp differences.
+What to build: Only if the homelab CPU INT8 sequential baseline is unsuitable for the stated portfolio workflow, test one bounded batched profile and compare it with sequential results.
 Blocked by: 02 - Compare configurable CPU decoding through complete result bundles.
 Status: Blocked.
-Ready for agent: No; batched-path implementation and contract checks are present, but comparison remains blocked by OPT-02 evidence.
+Ready for agent: No; wait for OPT-02 and the sequential homelab evidence. Record N/A if sequential is suitable.
 Triage label: ready-for-agent.
 
 ## Problem
@@ -26,7 +26,7 @@ Use the same Turbo model boundary, canonical transcript, exporters, and startup-
 
 Resolve effective VAD options explicitly: the pinned sequential and batched defaults use different silence thresholds, context, fallback, and timestamp behavior. Materialize fresh VAD arguments per call to avoid dictionary mutation. Keep the 30-second model window fixed, explicitly request segment timestamps, and retain disabled word timestamps. The current implementation rejects batched/VAD-off profiles during startup resolution; support that combination only after the adapter can supply and verify full-file clip timestamps. The pinned API lacks the sequential full-file clip default for recordings of 30 seconds or longer. Compare cross-job behavior as well as a single successful bundle.
 
-Screen on Formal Words, freeze candidate settings, and evaluate Conversation with Kob without using its reference to tune the candidate. Measure complete results and memory, not just model-call return. A CPU batch comparison does not require GPU implementation; combined GPU batching is evaluated after both capabilities are available.
+Do not sweep batch sizes. If sequential is unsuitable, select one supported CPU batch configuration tied to the observed bottleneck, test it once per authorized original, and compare complete output, reviewed speech/timing, and memory. Keep Kob as final non-regression evidence and do not use its reference text to select a profile. No GPU or second candidate is in scope.
 
 ## Testing
 
@@ -39,13 +39,13 @@ Prefer public CLI/evaluation cases with fake inference for mode metadata, valid 
 - [ ] Explicit VAD/window/timestamp behavior and repeated-call argument isolation are verified; a batch-one control exposes path differences, and quiet-speech/boundary omissions are reviewed before increasing batch size.
 - [x] Batched profiles with VAD disabled fail during profile resolution until the implementation can provide verified full-file clip timestamps; fake profile tests cover this guard.
 - [ ] Segment ordering, finite bounds, original offsets/gaps, and exported subtitle times satisfy the existing source-timeline contract without double restoration or invented alignment.
-- [ ] Controlled CPU results include the sequential path, batch-one control, and batch-two/four cases or explicit resource-failure evidence, with reviewed speech coverage, repetition/omission checks, full-call timing, and peak RAM.
+- [ ] If the trigger is met, one bounded batch candidate is compared to sequential with reviewed speech coverage, repetition/omission checks, full-call timing, and peak RAM; if not, record N/A with sequential evidence.
 - [ ] Failed/unsupported/resource-exhausted candidates preserve sources and prior outputs and cannot publish success or silently change mode/batch size.
 - [x] Fake sequential/batched adapter and profile checks pass; full ordinary suite, lint, formatting, and types pass, with commands in the [implementation evidence](../../../docs/optimization-verification-20261018.md). No real batch experiment or quality/timing outcome is claimed.
 
 ## Out of scope
 
-Any additional real recording or derived media; unrestricted automatic batching; per-job HTTP options; model/backend changes; assuming GPU capability is required for this CPU slice.
+Any additional real recording or derived media; batch-size sweep; more than one batch candidate; unrestricted automatic batching; per-job HTTP options; model/backend changes; GPU.
 
 ## Further notes
 

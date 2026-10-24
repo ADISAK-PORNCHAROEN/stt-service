@@ -377,7 +377,9 @@ def _is_cpu_baseline(profile: dict[str, object]) -> bool:
         "hotwords_sha256": None,
         "model_window_seconds": 30,
     }
-    return all(profile.get(key) == value for key, value in expected.items())
+    return profile.get("no_repeat_ngram_size", 0) == 0 and all(
+        profile.get(key) == value for key, value in expected.items()
+    )
 
 
 def _merge_group(target: dict[str, object], additional: dict[str, object]) -> None:

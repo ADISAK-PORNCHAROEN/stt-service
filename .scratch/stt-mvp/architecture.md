@@ -1,4 +1,4 @@
-﻿# STT MVP architecture
+# STT MVP architecture
 
 Current implementation structure, inspected from source and README. This is not an assertion that checks or real-model acceptance passed. The [specification](spec.md) owns behavioral contracts, the [README](../../README.md) owns operator setup, and the parent-owned [tracker](../../docs/agents/issue-tracker.md) records evidence/status. Cold/warm CPU measurements are recorded; human quality review remains open.
 
@@ -52,7 +52,7 @@ repository/
   tests/                         ordinary and opt-in integration checks
   benchmarks/reports/            reviewed/sanitized reporting only
 
-D:\ai-stt\                       configurable STT_DATA_DIR, local disk
+[private local path]                       configurable STT_DATA_DIR, local disk
   cache/huggingface/             default HF_HOME; sole model cache
   cache/uv/                      default UV_CACHE_DIR
   jobs.sqlite3                   jobs and worker heartbeat, plus SQLite sidecars
@@ -101,6 +101,8 @@ Worker startup acquires ownership, recovers prior running rows to failed/interru
 Heartbeat runs independently every five seconds by default; stale means age at least 30 seconds. A loading/stopped/absent/stale worker is unavailable; `/health` reports API readiness, worker/model readiness, and heartbeat age with overall `503`, becoming `200` only when ready. Values are configurable. Worker shutdown records stopped status and releases ownership.
 
 The status route emits `id/status`, lifecycle epoch timestamps, `error`, derived `updated_at`, and safe `error_message`. HTTP error envelopes and exact status mappings are owned by the [specification](spec.md#http-contracts). Result routes check status/expiry and serve immutable JSON/TXT/SRT with an exclusive lease held through response completion. Lease contention returns `409`, and cleanup skips the leased job.
+
+The status route also exposes persisted integer `progress_percent`. The optional progress-capable engine interface reports decoded-audio seconds while consuming upstream segments. The pipeline converts these to increasing integer estimates capped at 99, emitting only changed percentages (at most 99 writes per job); the worker stores them only for running rows. Other injected engines retain the original `transcribe` interface and report 99 when inference returns. The success transaction alone sets 100 after publication. Failures/recovery retain the latest value, and each queued job starts at zero. SQLite schema upgrade is serialized with `BEGIN IMMEDIATE`; existing succeeded jobs receive 100, and other existing jobs receive zero. Progress does not change lifecycle-derived `updated_at` or worker readiness.
 
 ## Retention and recovery from cleanup failures
 

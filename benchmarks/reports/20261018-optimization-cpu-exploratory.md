@@ -9,7 +9,7 @@ Status: incomplete evidence; not an accepted controlled baseline or a quality cl
 - Python 3.12.10, faster-whisper 1.2.1, CTranslate2 4.8.3, PyAV 18.1.0.
 - Cached model revision: `0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf`; offline Hugging Face mode. OS page cache was not flushed.
 - Implementation base: `b93404ece55645db75b4f566284d00dd1f58e497` plus the external frozen source snapshot. This measurement preceded the subsequent reference/alias/report review fixes; it must not be attributed to a later commit without that distinction.
-- External evidence: `D:\ai-stt\output\optimization-20261018-015630\cpu-baseline-formal\evaluation.json`; implementation snapshot and file hashes are beside it in `source-snapshot` and `source-snapshot.json`.
+- External evidence: `[private local path]`; implementation snapshot and file hashes are beside it in `source-snapshot` and `source-snapshot.json`.
 
 The positive allowlist contains only Formal Words and Conversation with Kob. No other real recording was used in this observation. No numerical CER/WER is available because publisher subtitles have not been reviewed against speech.
 

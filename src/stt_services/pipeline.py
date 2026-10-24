@@ -1,6 +1,7 @@
 """A complete local transcription behind one reusable interface."""
 
 import json
+import math
 import platform
 import shutil
 import tempfile
@@ -9,7 +10,7 @@ import time
 from collections.abc import Callable
 from importlib.metadata import version
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 import psutil
 
@@ -25,6 +26,13 @@ class Engine(Protocol):
 
 
 EngineFactory = Callable[[Settings], Engine]
+
+
+@runtime_checkable
+class ProgressEngine(Protocol):
+    def transcribe_with_progress(
+        self, path: Path, on_progress: Callable[[float], None] | None = None
+    ) -> EngineResult | list[Segment]: ...
 
 
 class MemorySampler:
@@ -70,6 +78,7 @@ class Pipeline:
         *,
         source_guard: Callable[[], None] | None = None,
         source_sha256: str | None = None,
+        on_progress: Callable[[int], None] | None = None,
     ) -> Transcript:
         started = time.perf_counter()
         if output_dir.exists():
@@ -89,8 +98,24 @@ class Pipeline:
             if source_guard:
                 source_guard()
             inference_started = time.perf_counter()
-            engine_result = self.engine.transcribe(source)
+            last_percent = 0
+
+            def report_progress(seconds: float) -> None:
+                nonlocal last_percent
+                if on_progress is None or not math.isfinite(seconds):
+                    return
+                percent = int(min(99.0, max(0.0, seconds / audio.decoded_seconds * 100)))
+                if percent > last_percent:
+                    on_progress(percent)
+                    last_percent = percent
+
+            if on_progress is not None and isinstance(self.engine, ProgressEngine):
+                engine_result = self.engine.transcribe_with_progress(source, report_progress)
+            else:
+                engine_result = self.engine.transcribe(source)
             metrics.inference_seconds = time.perf_counter() - inference_started
+            # Generation is complete, including silence-only input. Publication is pending.
+            report_progress(audio.decoded_seconds)
             if isinstance(engine_result, EngineResult):
                 segments = engine_result.segments
                 effective_configuration = engine_result.effective_configuration

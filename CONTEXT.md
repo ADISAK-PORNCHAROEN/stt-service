@@ -20,6 +20,10 @@ _Avoid_: Source, permanent archive
 The canonical account of recognized text and its ordered timed segments for one recording.
 _Avoid_: Subtitle file, export
 
+**Reviewed reference**:
+Text checked by a human against a recording and used to assess transcription errors for that recording.
+_Avoid_: Unreviewed model output, assumed ground truth
+
 **Segment**:
 A span of recognized text with start and end times on the original recording.
 _Avoid_: Word timestamp, speaker turn

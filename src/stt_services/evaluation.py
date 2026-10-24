@@ -1,4 +1,4 @@
-"""Explicit, content-bound evaluation of the owner's two approved recordings."""
+"""Explicit, content-bound evaluation of the owner's approved recording."""
 
 import difflib
 import hashlib
@@ -160,7 +160,7 @@ def load_manifest(
     if len(set(identities)) != len(identities):
         raise ValueError("Duplicate recording identity in evaluation manifest")
     if set(identities) != set(approved):
-        raise ValueError("Evaluation manifest must explicitly contain both authorized recordings")
+        raise ValueError("Evaluation manifest must explicitly contain all authorized recordings")
     verified = []
     for entry in manifest.recordings:
         item = approved[entry.id]
@@ -748,7 +748,7 @@ def _validate_saved_bundle(
         previous_start = start
         value = segment["text"].strip()
         normalized_segments.append(value)
-        srt_lines.extend([str(index), f"{_srt_time(start)} --> {_srt_time(end)}", value, "", ""])
+        srt_lines.extend([str(index), f"{_srt_time(start)} --> {_srt_time(end)}", value, ""])
     text = "\n".join(normalized_segments)
     if payload.get("text") != text:
         raise ValueError("Saved transcript text does not match its canonical segments")
@@ -760,7 +760,7 @@ def _validate_saved_bundle(
     expected_txt = "".join(value + "\n" for value in normalized_segments)
     if txt_bytes.decode("utf-8") != expected_txt:
         raise ValueError("Saved TXT does not match the canonical transcript segments")
-    if srt_bytes.decode("utf-8") != "\n".join(srt_lines):
+    if srt_bytes.decode("utf-8") != "\n".join(srt_lines) + "\n":
         raise ValueError("Saved SRT does not match the canonical transcript segments")
     return (
         text,

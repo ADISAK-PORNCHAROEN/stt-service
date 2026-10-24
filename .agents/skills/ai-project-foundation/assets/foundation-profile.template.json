@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "documents": ["AGENTS.md", "CLAUDE.md"],
+  "instructions": {
+    "format": "foundation-v1",
+    "guide": "AGENTS.md",
+    "bridge": "CLAUDE.md",
+    "mode": "unreviewed",
+    "managedBlocks": [],
+    "historyIndex": null,
+    "archives": []
+  },
+  "skillPaths": [],
+  "requiredSkills": [],
+  "skillInventory": [],
+  "skillChecklist": "docs/agents/skills-checklist.md"
+}

@@ -87,6 +87,18 @@ def test_sequential_engine_uses_profile_and_returns_actual_observations(tmp_path
     )
 
 
+@pytest.mark.parametrize("mode", ["sequential", "batched"])
+def test_repetition_limit_reaches_decoder_and_result_metadata(tmp_path, monkeypatch, mode):
+    model = patch_sequential_model(monkeypatch)
+    monkeypatch.setattr(faster_whisper, "BatchedInferencePipeline", lambda model: model)
+    configured = Settings(data_dir=tmp_path, mode=mode, no_repeat_ngram_size=8)
+    engine = WhisperEngine(configured)
+    result = engine.transcribe(tmp_path / "generated.wav")
+    assert model.calls[0]["no_repeat_ngram_size"] == 8
+    assert result.effective_configuration["no_repeat_ngram_size"] == 8
+    assert configured.resolve_profile().schema_version == 2
+
+
 def test_batched_engine_explicitly_reports_semantic_changes_and_fresh_vad(monkeypatch, tmp_path):
     model = FakeModel(actual_device="cpu", actual_compute_type="int8_float32")
     expected_model = model

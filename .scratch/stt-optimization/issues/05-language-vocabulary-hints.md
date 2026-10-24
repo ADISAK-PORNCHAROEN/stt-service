@@ -1,9 +1,9 @@
 # 05: Compare language and vocabulary hints for mixed speech
 
-What to build: An operator can select language/context and short vocabulary hints through the same transcription workflow, obtain complete bundles identifying the effective choices, and compare reviewed Thai/English errors against the frozen baseline.
+What to build: Only after reference review identifies one specific spoken-word error in Formal Words, test at most one short hint and check it against the frozen baseline and Kob final result.
 Blocked by: 02 - Compare configurable CPU decoding through complete result bundles.
 Status: Blocked.
-Ready for agent: No; supported options/profile reporting are implemented, but controlled comparisons remain blocked by OPT-02 evidence.
+Ready for agent: No; wait for reviewed OPT-01/02 evidence. Record N/A if no specific error justifies a hint.
 Triage label: ready-for-agent.
 
 ## Problem
@@ -22,7 +22,7 @@ Expose controlled language, previous-text context, and vocabulary choices throug
 
 ## Implementation decisions
 
-Compare automatic language, an explicit Thai hint, and per-window multilingual mode where supported. Test a short relevant initial prompt or vocabulary hint independently, and compare previous-text conditioning as a separate factor. Record effective settings and hint identities without exposing private hint text in sanitized metadata.
+Do not sweep language, context, or hints. If one clear error in the Formal Words tuning reference meets the trigger, test one short relevant hint with all other settings unchanged. Record the effective profile and a hash of the private hint, never its text in sanitized output. Use Kob only as a final non-regression check; do not derive the hint from Kob's reference.
 
 Build vocabulary only from permitted tuning knowledge, never final-evaluation reference content. Preserve spoken English-only cues when preparing references. Watch for inserted glossary words, unwanted translation/transliteration, names/numbers, omissions, repetition, and silence errors. Per-window language detection is not a guarantee of within-sentence language-switch accuracy.
 
@@ -38,7 +38,7 @@ Use public commands and existing fake-engine seams to verify option validation, 
 
 - [ ] Supported language/context/hint choices reach actual inference through shared configuration and are described truthfully in complete result bundles.
 - [ ] Unsupported combinations or ignored options fail clearly or are explicitly reported without claiming their application.
-- [ ] Separate controlled cases compare baseline with language, context, and short vocabulary hints, with all other effective options held fixed.
+- [ ] If the trigger is met, one hint case is compared to baseline with all other effective options held fixed; otherwise record N/A and the reviewed evidence that found no targeted error.
 - [ ] Frozen Thai/English scoring, important-name/number review, speech coverage, hallucination/repetition checks, and timing observations show which cases improve, regress, or remain inconclusive.
 - [ ] Reports distinguish reviewed language-switch/recognition errors, script/orthography differences, and reference mismatches; forced/detected language evidence is truthful and Kob answer text does not drive candidate selection.
 - [ ] Hints do not consume final-evaluation answer text, and reference preparation preserves spoken English while excluding translations/romanization.
@@ -47,7 +47,7 @@ Use public commands and existing fake-engine seams to verify option validation, 
 
 ## Out of scope
 
-Additional real recordings or derived media; English-only or noise accuracy certification unsupported by these two originals; training; another model; automatic transcript rewriting; final default promotion.
+Additional real recordings or derived media; more than one hint; broad language/context/hint sweeps; English-only or noise accuracy certification unsupported by these two originals; training; another model; automatic transcript rewriting; final default promotion.
 
 ## Further notes
 

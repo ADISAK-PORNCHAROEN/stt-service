@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     language_mode: Literal["auto", "th", "multilingual_per_window"] = "auto"
     condition_on_previous_text: bool = True
     temperature_zero: bool = False
+    no_repeat_ngram_size: int = Field(default=0, ge=0, le=20)
     vad_enabled: bool = True
     vad_threshold: float = Field(default=0.5, gt=0, lt=1)
     vad_min_silence_duration_ms: int = Field(default=2000, ge=0, le=30000)
@@ -40,6 +41,7 @@ class Settings(BaseSettings):
 
     def resolve_profile(self) -> "ResolvedProfile":
         return ResolvedProfile(
+            schema_version=2 if self.no_repeat_ngram_size else 1,
             model=self.model,
             device=self.device,
             device_index=self.device_index,
@@ -51,6 +53,7 @@ class Settings(BaseSettings):
             language_mode=self.language_mode,
             condition_on_previous_text=self.condition_on_previous_text,
             temperature_zero=self.temperature_zero,
+            no_repeat_ngram_size=self.no_repeat_ngram_size,
             vad_enabled=self.vad_enabled,
             vad_threshold=self.vad_threshold,
             vad_min_silence_duration_ms=self.vad_min_silence_duration_ms,
@@ -78,7 +81,7 @@ class ResolvedProfile(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    schema_version: Literal[1] = 1
+    schema_version: Literal[1, 2] = 1
     model: str
     device: Literal["cpu", "cuda"]
     device_index: int
@@ -90,6 +93,7 @@ class ResolvedProfile(BaseModel):
     language_mode: Literal["auto", "th", "multilingual_per_window"]
     condition_on_previous_text: bool
     temperature_zero: bool
+    no_repeat_ngram_size: int = Field(default=0, ge=0, le=20)
     vad_enabled: bool
     vad_threshold: float
     vad_min_silence_duration_ms: int
@@ -100,6 +104,8 @@ class ResolvedProfile(BaseModel):
 
     @model_validator(mode="after")
     def valid_profile_combinations(self) -> "ResolvedProfile":
+        if self.schema_version == 1 and self.no_repeat_ngram_size:
+            raise ValueError("A nonzero repetition limit requires profile schema version 2")
         if self.mode == "sequential" and self.batch_size != 1:
             raise ValueError("Sequential mode requires batch size 1")
         if self.mode == "batched" and not self.vad_enabled:
@@ -131,6 +137,9 @@ class ResolvedProfile(BaseModel):
     @property
     def public_configuration(self) -> dict[str, object]:
         result = self.model_dump(exclude={"initial_prompt", "hotwords"})
+        if self.schema_version == 1:
+            # Preserve existing baseline and candidate identities byte for byte.
+            result.pop("no_repeat_ngram_size")
         result["initial_prompt_sha256"] = _private_value_hash(self.initial_prompt)
         result["hotwords_sha256"] = _private_value_hash(self.hotwords)
         return result

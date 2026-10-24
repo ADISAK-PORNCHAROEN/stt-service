@@ -81,7 +81,11 @@ class Worker:
         try:
             # A crash can leave an unpublished staging directory or complete result.
             # Recovery marks interrupted jobs failed; they are never claimed again.
-            self.pipeline.run(directory / f"input{job['suffix']}", directory / "result")
+            self.pipeline.run(
+                directory / f"input{job['suffix']}",
+                directory / "result",
+                on_progress=lambda percent: self.store.update_progress(job["id"], percent),
+            )
             self.store.finish(job["id"])
             logger.info("Job %s succeeded", job["id"])
         except Exception:

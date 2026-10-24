@@ -1,9 +1,9 @@
 # 02: Compare configurable CPU decoding through complete result bundles
 
-What to build: An operator can select CPU beam/thread configurations through the existing workflow, receive complete result bundles identifying the actual settings, and compare speed and reviewed quality against the controlled baseline.
+What to build: If OPT-01 evidence shows a concrete speed, memory, or reviewed-error need, compare no more than two CPU candidate profiles against the CPU INT8 baseline on the i7-4770K.
 Blocked by: 01 - Prepare the two-recording evaluation and controlled CPU baseline.
 Status: Blocked.
-Ready for agent: No; code is implemented, but OPT-01 baseline and reviewed-reference acceptance remain blockers for candidate experiments.
+Ready for agent: No; await the OPT-01 baseline and reviewed-reference findings. Record N/A if neither trigger exists.
 Triage label: ready-for-agent.
 
 ## Problem
@@ -28,7 +28,7 @@ Resolve one immutable profile at startup and carry segments plus effective engin
 
 Give the resolved profile a stable versioned identity. Store each recording's detected language and other observations in its result, without changing that profile identity. An explicit experiment plan and per-run record bind the selected profile, actual settings, model/runtime identity, source role, output bundle, and applicable scoring-policy/reference revision. Use the same pipeline for CLI and worker; no generic profile registry or parallel inference stack is required.
 
-Start isolated screening on Formal Words with beam one/three/five and thread counts two/four, one factor at a time. Freeze candidate settings before using Conversation with Kob for final comparison. Keep device CPU, compute INT8, language/VAD/context/fallback settings at baseline in this slice. No setting change justifies silent fallback or an overwrite of prior outputs.
+Do not run a parameter matrix. After OPT-01, run at most two candidate profiles total, one at a time, changing only settings directly tied to a demonstrated problem. Keep device CPU, compute INT8, model, language/VAD/context/fallback settings at baseline unless the candidate specifically tests one of those settings. Use Formal Words for selection and Kob for a non-regression check; never use Kob reference text to select the candidate. No setting change justifies silent fallback or an overwrite of prior outputs. If the baseline meets the stated local/portfolio need and reviewed quality has no concrete error requiring tuning, write an N/A disposition and do not run candidates.
 
 ## Testing
 
@@ -39,7 +39,8 @@ Exercise public transcription and benchmark commands using injected engines, gen
 - [ ] Validated CPU beam/thread selections reach inference through the public CLI and shared worker startup configuration; invalid settings fail clearly before processing.
 - [ ] Existing default behavior is reproducible, and result configuration reports actual resolved settings/model revision with no hard-coded contradictory metadata.
 - [ ] Each candidate produces one consistent canonical JSON/TXT/SRT bundle without another inference for exporters; original source timeline, output ownership, and atomic publication are preserved.
-- [ ] Guarded experiments compare one factor at a time, freeze settings before final evaluation, and record both time/resource costs and reviewed Thai/English/important-error outcomes.
+- [ ] Run no more than two evidence-justified candidate profiles, one at a time; otherwise record N/A with the baseline and reference evidence that show no trigger.
+- [ ] Any candidate comparison changes only the targeted factor, freezes settings before final evaluation, and records time/resource costs plus reviewed Thai/English/important-error outcomes.
 - [ ] External diagnostics distinguish observed settings and decode behavior from an uncalibrated confidence estimate.
 - [ ] Returned engine evidence drives published effective configuration; immutable profiles and fresh per-call arguments prevent cross-job state changes, including after a failed job.
 - [ ] CLI, benchmark/evaluation, and worker results identify the same resolved startup profile; different per-file observations do not mutate that profile or trigger an unnecessary model reload. Reproducible experiment/run records bind profiles and output bundles to their actual execution evidence.
@@ -49,7 +50,7 @@ Exercise public transcription and benchmark commands using injected engines, gen
 
 ## Out of scope
 
-Other real recordings or derived test media; GPU; batched decoding; language or vocabulary changes; extra HTTP tuning endpoints; selecting a final service default.
+Other real recordings or derived test media; GPU; more than two CPU candidates; broad sweeps; batched decoding; language or vocabulary changes; extra HTTP tuning endpoints; automatically selecting a final service default.
 
 ## Further notes
 

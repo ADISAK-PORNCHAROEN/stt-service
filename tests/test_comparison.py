@@ -232,6 +232,45 @@ def test_cli_comparison_requires_reviews_and_reports_speedup_without_inference(t
     assert (reviewed_output / "comparison.md").is_file()
 
 
+def test_repetition_limited_candidate_cannot_be_supplied_as_cpu_baseline(tmp_path, capsys):
+    item = APPROVED_RECORDINGS[0]
+    baseline_profile = Settings(no_repeat_ngram_size=8).resolve_profile()
+    candidate_profile = Settings(beam_size=3).resolve_profile()
+    baseline, _ = _write_report(
+        tmp_path / "baseline",
+        item,
+        baseline_profile.public_configuration,
+        baseline_profile.profile_id,
+        20.0,
+        0.1,
+    )
+    candidate, _ = _write_report(
+        tmp_path / "candidate",
+        item,
+        candidate_profile.public_configuration,
+        candidate_profile.profile_id,
+        10.0,
+        0.1,
+    )
+    output = tmp_path / "comparison"
+    assert (
+        main(
+            [
+                "compare",
+                "--baseline",
+                str(baseline),
+                "--candidate",
+                str(candidate),
+                "--output-dir",
+                str(output),
+            ]
+        )
+        == 1
+    )
+    assert "baseline" in capsys.readouterr().err.lower()
+    assert not output.exists()
+
+
 def test_duplicate_report_or_run_cannot_fake_independent_warm_runs(tmp_path, capsys):
     item = APPROVED_RECORDINGS[0]
     baseline_profile = Settings().resolve_profile()

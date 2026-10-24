@@ -1,8 +1,8 @@
-﻿# STT MVP specification
+# STT MVP specification
 
 Approved scope with implementation present. This specification records required behavior and the current source contracts; source inspection is not evidence that acceptance checks passed. Owner disposition (2026-10-17): tickets 02 and 06 are closed with two phrase-level corrections and the lack of reference subtitles disclosed; full-recording text/timing review is waived, not complete. The parent maintains ticket status and validation evidence in the [local tracker](../../docs/agents/issue-tracker.md).
 
-Read the [architecture](architecture.md) for current responsibilities, [README](../../README.md) for operator commands, and [glossary](../../CONTEXT.md) for domain terms. This approved MVP supersedes exploratory alternatives in the [handoff](../../STT-HANDOFF.md).
+Read the [architecture](architecture.md) for current responsibilities, [README](../../README.md) for operator commands, and [glossary](../../CONTEXT.md) for domain terms.
 
 ## Problem Statement
 
@@ -12,7 +12,7 @@ A local user needs Thai/English transcription of long recordings with readable t
 
 Use Python 3.12, uv, and the repository-root `.venv`. Transcribe using Whisper Turbo through faster-whisper on CPU INT8 with four inference threads as the agreed baseline. Provide `stt transcribe <file> --output-dir <directory>` and reuse its pipeline from one separate persistent-model worker behind a loopback FastAPI interface and SQLite queue.
 
-JSON is the canonical transcript. Derive TXT/SRT from the same transcript without another inference run. Finalize all artifacts in staging before publishing a complete directory. Keep managed runtime data under configurable `D:\ai-stt\`, with a single Hugging Face model cache. The CLI accepts caller-selected destinations outside managed jobs/cache/locks; an external storage destination is recommended.
+JSON is the canonical transcript. Derive TXT/SRT from the same transcript without another inference run. Finalize all artifacts in staging before publishing a complete directory. Keep managed runtime data under configurable `[private local path]`, with a single Hugging Face model cache. The CLI accepts caller-selected destinations outside managed jobs/cache/locks; an external storage destination is recommended.
 
 ## User Stories
 
@@ -40,11 +40,11 @@ The manifest requires Python `>=3.12,<3.13` and uv manages the root `.venv` with
 
 The agreed inference baseline remains Turbo, CPU, INT8, four threads. Current settings expose model/thread configuration; record actual effective settings for every measurement rather than treating an override as evidence for the approved baseline. Transcription uses automatic language detection, VAD, beam size five, and no word timestamps. `faster_whisper.download_model` resolves the cached snapshot before model construction, and the snapshot directory name is recorded as `versions.model_revision`.
 
-Set `HF_HOME` and `UV_CACHE_DIR` before downloads. Defaults are under the storage root; explicitly provided environment values take precedence. Use one HF cache rather than copying weights to a second model tree. `STT_DATA_DIR` defaults to `D:\ai-stt` on Windows and `~/.local/share/ai-stt` elsewhere. File-size, duration, and queued-job settings may lower but cannot exceed the approved ceilings. Storage is local disk; network shares are outside this design.
+Set `HF_HOME` and `UV_CACHE_DIR` before downloads. Defaults are under the storage root; explicitly provided environment values take precedence. Use one HF cache rather than copying weights to a second model tree. `STT_DATA_DIR` defaults to `[private local path]` on Windows and `~/.local/share/ai-stt` elsewhere. File-size, duration, and queued-job settings may lower but cannot exceed the approved ceilings. Storage is local disk; network shares are outside this design.
 
 ### CLI, validation, and output ownership
 
-`uv run stt transcribe <file> --output-dir <directory>` accepts a caller-selected absent destination. Require it outside managed jobs/cache/locks; recommend an external location such as `D:\ai-stt\output\run-01`. There is no requirement that every CLI destination be a descendant of the external root. Never delete a source or expire/overwrite CLI results. CLI validation/processing errors return 1; keyboard interruption returns 130.
+`uv run stt transcribe <file> --output-dir <directory>` accepts a caller-selected absent destination. Require it outside managed jobs/cache/locks; recommend an external location such as `[private local path]`. There is no requirement that every CLI destination be a descendant of the external root. Never delete a source or expire/overwrite CLI results. CLI validation/processing errors return 1; keyboard interruption returns 130.
 
 Accept WAV, MP3, M4A, FLAC, and MP4 containing decodable audio. Inclusive limits are 1,073,741,824 bytes and 7,200 seconds. Validate the suffix, file existence/size, audio stream, metadata duration, and the entire decoded frame stream before inference. Force the expected demuxer (`wav`, `mp3`, `mov`, or `flac`) and restrict protocols to `file,pipe` to prevent arbitrary playlist/protocol probing. Reject corrupt frames, invalid sample rates, and timelines with more than 16,384 discontinuous source spans. Sum decoded sample counts divided by frame sample rates using exact fractions; enforce the decoded-sample ceiling and also preserve the original recording duration, including container duration and audio PTS offsets. Cache decoded-span boundaries so mapping each timestamp uses binary search.
 
@@ -63,11 +63,13 @@ The pipeline creates sibling staging on the destination filesystem and writes `t
 | Request | Observable response |
 | --- | --- |
 | `POST /jobs` | Exactly one multipart `file`; `202` with `{"job_id":"<id>","status":"queued"}` after validated input and durable queued record. |
-| `GET /jobs/{job_id}` | `200` with `id`, `status`, `created_at`, `started_at`, `finished_at`, `updated_at`, `error`, and `error_message`. Times are UTC epoch seconds, absent lifecycle times are null. `updated_at` is derived from finish/start/create in that order. |
+| `GET /jobs/{job_id}` | `200` with `id`, `status`, `progress_percent`, `created_at`, `started_at`, `finished_at`, `updated_at`, `error`, and `error_message`. Times are UTC epoch seconds, absent lifecycle times are null. `updated_at` is derived from finish/start/create in that order and does not track progress updates. |
 | `GET /jobs/{job_id}/result?format=json\|txt\|srt` | JSON default; `200` completed artifact with JSON, plain-text, or SubRip media type, preserving UTF-8. |
 | `GET /health` | `ready`, `api`, `worker`, `model_ready`, `heartbeat_at`, and `heartbeat_age_seconds`; `200` only when worker/model readiness is fresh, otherwise `503`. |
 
 IDs are generated lowercase 32-character hexadecimal identifiers. Failure `error` is `interrupted` or `processing_failed`; `error_message` is a safe explanation, not a traceback. Result lease contention can also return `409`, and a missing result artifact returns `404`.
+
+Owner-approved progress extension (2026-10-18): `progress_percent` is a persisted integer. New queued jobs start at zero. During inference it estimates the furthest yielded segment end divided by total decoded-audio duration, accounting for VAD-restored segment times without treating container offsets/gaps as processed audio. Updates never decrease and remain at most 99 while running; completed inference, including empty speech, advances to 99 pending publication. Only successful publication followed by the success transaction sets 100. Failed/interrupted jobs retain their last estimate. Estimates can stall or jump during validation, VAD, silence, or batched inference; they are not elapsed-work percentages or an ETA. Engines without incremental reporting remain at zero until inference returns. Existing databases upgrade transactionally without losing jobs; old succeeded rows receive 100 and other old rows receive zero. Clients poll the existing status endpoint and must inspect status alongside progress. No new endpoint, SSE, WebSocket, or cross-origin support is added.
 
 Errors use `{"detail":"<message>","error":{"code":"<code>","message":"<message>"}}` for application validation/HTTP errors. Preserve these mappings:
 
@@ -112,7 +114,7 @@ Manually review actual Thai/English text, names, numbers, silence, boundary timi
 
 ## Out of Scope
 
-GPU execution, Qwen or alternative engines, EmbeddingGemma reader experiments, diarization, word timestamps, forced alignment, UI, public networking, cross-origin browser clients, automatic retries, multiple workers, model training, and automatic deletion of CLI-owned files/results.
+GPU execution, Qwen or alternative engines, diarization, word timestamps, forced alignment, UI, public networking, cross-origin browser clients, automatic retries, multiple workers, model training, and automatic deletion of CLI-owned files/results.
 
 ## Further Notes
 

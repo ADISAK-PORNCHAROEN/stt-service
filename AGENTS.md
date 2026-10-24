@@ -1,30 +1,43 @@
-# Repository Guidelines
+# STT Services Agent Guide
 
-## Project Structure
+This project transcribes Thai and English recordings with Whisper Turbo on CPU and exposes both a CLI and a localhost job service. Python 3.12, uv, the root `.venv`, and the committed lockfile define the development environment.
 
-This Python 3.12 project transcribes Thai/English with Whisper Turbo on CPU. Code is in `src/stt_services/`, tests in `tests/`, and sanitized measurements in `benchmarks/reports/`. Before changing behavior, read `.scratch/stt-mvp/spec.md`, `.scratch/stt-mvp/architecture.md`, and `docs/agents/issue-tracker.md`. `STT-HANDOFF.md` is background; `CONTEXT.md` defines project terms.
+## Working agreements
 
-## Setup and Development Commands
+- Preserve the split between CLI/API, media validation, shared pipeline, engine, persistence, and exporters. JSON remains canonical; TXT and SRT are derived from it. Segment times refer to the original recording.
+- Keep Thai text in UTF-8. Use four-space indentation, type hints, `snake_case` functions/modules, `PascalCase` classes, and `test_*.py` test names.
+- Before behavior changes, read `.scratch/stt-mvp/spec.md`, `.scratch/stt-mvp/architecture.md`, `docs/agents/issue-tracker.md`, and `CONTEXT.md`; read the active optimization spec and ticket when working on that effort.
+- Use `uv` and the repository-root `.venv`. Copy `.env.local.example` to the ignored `.env.local` for machine-specific paths and pass it with `uv run --env-file .env.local`. Keep model weights, caches, databases, uploads, transcripts, credentials, and other runtime data outside Git.
+- Do not run `uv sync` until `UV_CACHE_DIR` has been loaded from `.env.local` into the PowerShell environment. Keep `av<19` until faster-whisper supports newer PyAV.
+- Before handoff, run the required checks in `docs/TESTING.md` for the changed behavior. Preserve external destinations and existing outputs; CLI output directories must be new and outside managed jobs/cache/lock paths.
+- Keep local experimental profiles and approved baselines distinct. Update the canonical spec and tracker when accepted decisions or ticket status change; do not infer recognition acceptance from software checks alone.
+- Update `uv.lock` with dependency changes. Benchmark reports record the hardware, software/model versions, and timing/resource fields required by the active ticket; identify whether timing includes model loading or warm reuse. Repeated comparisons are needed only for repeatable performance-improvement claims. Report CER/WER only against reviewed reference text with documented normalization and tokenization.
+- Use concise imperative commit prefixes such as `feat:`, `fix:`, `test:`, and `docs:`. Handoffs state scope, validation, evidence, and limitations.
+- Keep task-specific restrictions in the task record. Do not publish, deploy, operate production systems, or send external data unless the user authorized that action.
 
-Use uv and the root `.venv`. Set `HF_HOME`, `UV_CACHE_DIR`, and `STT_DATA_DIR` outside the repository. Run commands from the root:
+## Find the source
 
-- `uv sync --locked` installs the pinned environment.
-- `uv run stt transcribe <file> --output-dir <new-directory>` writes JSON, TXT, and SRT.
-- `uv run stt benchmark <file> --output-dir <new-directory>` measures cold and warm runs.
-- `uv run stt serve --port 8000` and `uv run stt worker` start the API and persistent worker in separate terminals.
-- `uv run pytest` runs the ordinary suite with fake inference; integration tests are excluded by default.
-- `uv run ruff check .`, `uv run ruff format --check .`, and `uv run mypy` lint, check formatting, and check production types.
+- Start at `src/stt_services/cli.py` for CLI commands and `src/stt_services/api.py` for HTTP routes.
+- Follow media admission through `uploads.py` and `audio.py`; shared inference and output through `pipeline.py`, `engines/whisper.py`, `schemas.py`, and `exporters.py`.
+- Follow durable jobs and lifecycle through `jobs.py` and `worker.py`; read `config.py` for environment-backed settings.
+- Optimization workflows start at `evaluation.py`, `comparison.py`, and `references.py`. Confirm paths and callers against current source; use targeted `rg` searches when a route is unclear.
+- The implementation boundaries and generated API contract are summarized in `docs/ARCHITECTURE.md` and `docs/API.md`; detailed MVP ownership remains in `.scratch/stt-mvp/architecture.md`.
 
-For real-model acceptance, set `STT_TEST_MEDIA` to a local recording and run `uv run pytest -m integration tests/test_real_model.py tests/test_http_real.py -v`. This uses Whisper weights and launches local service processes.
+## Read by task
 
-## Style and Testing
+| Task | Read first |
+| --- | --- |
+| Product behavior or acceptance | `PRODUCT.md`, `.scratch/stt-mvp/spec.md`, and the active feature spec/ticket |
+| Domain terms | `CONTEXT.md` |
+| Architecture or integration | `docs/ARCHITECTURE.md` and `.scratch/stt-mvp/architecture.md` |
+| HTTP/API behavior | `docs/API.md`, `src/stt_services/api.py`, and `schemas.py` |
+| Persistence or retention | `docs/SCHEMA.md`, `jobs.py`, and `worker.py` |
+| Tests and quality checks | `docs/TESTING.md` and `.agents/skills/test-engineering/SKILL.md` |
+| Any application code change | `.agents/skills/test-engineering/SKILL.md` and `.agents/skills/security-review/SKILL.md` |
+| Security-sensitive change | `SECURITY.md`, `docs/SECURITY-MODEL.md`, and `.agents/skills/security-review/SKILL.md` |
+| Specs, tickets, or workflow handoff | `docs/agents/issue-tracker.md`, the current `.scratch/<feature>/spec.md` and issue files, and `docs/agents/tools.md` |
+| AI workflow setup or instruction maintenance | `docs/agents/tools.md`, `.agents/skills/ai-project-foundation/SKILL.md`, and `docs/AI-FOUNDATION-REPORT.md` |
 
-Use four-space indentation, type hints, `snake_case` modules/functions, and `PascalCase` classes. Keep Thai UTF-8. Preserve the split between CLI/API, media validation, shared pipeline, engine, persistence, and exporters. JSON is canonical; derive TXT/SRT from it. Segment times follow the original recording timeline.
+## Completion
 
-Name tests `test_*.py`. Cover CLI/API behavior with fake inference plus real filesystem/SQLite interactions; use real-model tests for engine contracts. No coverage threshold is set. Benchmark reports include hardware, versions, cold/warm timing, RTFx, and peak memory. Report CER/WER only against reviewed reference text with documented normalization and tokenization.
-
-## Contributions and Data
-
-The initial commit uses `docs:`. Use concise imperative prefixes such as `feat:`, `fix:`, `test:`, and `docs:`. Pull requests state scope, validation, evidence, and limitations; update the spec/tracker when decisions change.
-
-Keep model weights, caches, uploads, databases, transcripts, and credentials outside Git, usually under `D:\ai-stt\`. Preserve sources and existing outputs; CLI destinations must be new and outside managed jobs/cache/lock paths. Update `uv.lock` with dependencies; retain `av<19` until faster-whisper supports newer PyAV.
+Report what changed, why, the exact checks actually run, and any limits or unresolved acceptance. Keep source inspection, AI review, native command results, and real-recording evidence distinct. Preserve the existing working tree and never claim a check or host behavior that was not observed.
