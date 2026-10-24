@@ -4,7 +4,7 @@
 
 **GitHub issue:** [#6](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/6) · **Parent spec:** [#1](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/1)
 
-**Blocked by:** [#5 — Migrate worker and shared callers to the Job boundary](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/5).
+**Blocked by:** Human review of the supplied 87-cue Formal Words reference; implementation ticket #5 is complete.
 
 **Status:** Blocked · **Ready for agent:** No; reference review remains pending.
 
