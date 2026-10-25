@@ -34,6 +34,7 @@ None (can start immediately).
 
 ## Validation evidence
 
+- Test revision: `00fa280bffb00ba04e92296ad8861aa2916817e9`; the working tree was clean during the final verification run.
 - `uv run --env-file .env.local -- python -m pytest` — 154 passed, 2 deselected.
 - `uv run --env-file .env.local ruff check .` — passed.
 - `uv run --env-file .env.local ruff format --check .` — passed (260 files).

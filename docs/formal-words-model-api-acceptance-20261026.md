@@ -14,6 +14,7 @@ The recording, reference text, job bundles, raw transcripts, and scorer output r
 - Runtime: Python 3.12.10; stt-services 0.1.0; faster-whisper 1.2.1; CTranslate2 4.8.3; PyAV 18.1.0.
 - Inference: CPU, 4 threads, requested INT8, effective `int8_float32`, beam size 5, sequential decoding, batch size 1, automatic language detection, temperature 0, VAD enabled.
 - Scoring: offline rescore of the API-produced JSON; `inference_performed=false` in the scorer. The API's legacy result format did not include a source hash, so the local run recorded an explicit operator binding between each submitted recording and its job. That binding is not an independently verifiable proof of source provenance.
+- Code scope: the real API run used the feature implementation in the working tree based on `d648ce9`, subsequently committed as `9494cfb`. The later `00fa280` change only derives the transcript request's OpenAPI schema from its DTO; it does not change runtime inference or transcript handling.
 
 ## Results
 
