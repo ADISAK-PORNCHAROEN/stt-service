@@ -8,8 +8,8 @@ The owner approved this service feature on 2026-10-25. The service [specificatio
 
 | Ticket | What to build | Blocked by | Status | Ready for agent |
 | --- | --- | --- | --- | --- |
-| [#11](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/11) | Persist and run a selected Whisper model per job | None | Complete — acceptance passed; PR merge pending | Done |
-| [#12](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/12) | Save edited transcript text and serve original/latest outputs | None | Complete — acceptance passed; PR merge pending | Done |
+| [#11](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/11) | Persist and run a selected Whisper model per job | None | Complete — merged in [PR #13](https://github.com/ADISAK-PORNCHAROEN/stt-service/pull/13) | Done |
+| [#12](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/12) | Save edited transcript text and serve original/latest outputs | None | Complete — merged in [PR #13](https://github.com/ADISAK-PORNCHAROEN/stt-service/pull/13) | Done |
 
 Both service issues are service-only tickets; their acceptance evidence and local validation commands are recorded in the [#11 ticket](../../.scratch/stt-transcript-review/issues/01-select-whisper-model.md) and [#12 ticket](../../.scratch/stt-transcript-review/issues/02-review-edit-transcript.md). The aggregate real-model measurements are in the [Formal Words acceptance report](../formal-words-model-api-acceptance-20261026.md); raw bundles remain outside Git/GitHub. Frontend UI integration is tracked in [frontend-stt#9](https://github.com/ADISAK-PORNCHAROEN/frontend-stt/issues/9) (blocked by frontend-stt#5 and this repo's #11) and [frontend-stt#10](https://github.com/ADISAK-PORNCHAROEN/frontend-stt/issues/10) (blocked by frontend-stt#5 and this repo's #12). No homelab test or deployment is in scope.
 

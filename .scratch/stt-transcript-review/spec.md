@@ -2,7 +2,7 @@
 
 **GitHub spec:** [stt-service#10](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/10)
 **Related product spec:** [frontend-stt#8](https://github.com/ADISAK-PORNCHAROEN/frontend-stt/issues/8)
-**Status:** Backend acceptance for #11 and #12 passed locally; PR merge is pending. Keep this parent spec issue #10 open as requested. Frontend UI integration remains in frontend-stt #9/#10.
+**Status:** Backend tickets #11 and #12 are merged in [PR #13](https://github.com/ADISAK-PORNCHAROEN/stt-service/pull/13). Keep this parent spec issue #10 open as requested. Frontend UI integration remains in frontend-stt #9/#10.
 
 ## Problem Statement
 
