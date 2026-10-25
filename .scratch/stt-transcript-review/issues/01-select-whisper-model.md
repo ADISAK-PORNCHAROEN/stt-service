@@ -1,7 +1,7 @@
 # 01 — Select and Run a Whisper Model per Job
 
 **GitHub ticket:** [stt-service#11](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/11)
-**Status:** Complete (acceptance passed; merge pending)
+**Status:** Complete — merged in [PR #13](https://github.com/ADISAK-PORNCHAROEN/stt-service/pull/13)
 **Ready for agent:** Yes — no blockers.
 
 ## Parent
