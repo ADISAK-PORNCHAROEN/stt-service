@@ -66,3 +66,7 @@ Preserve the current asynchronous REST contract and separate persistent worker. 
 The current implementation already exposes a Job-oriented asynchronous REST API. This work changes internal organization and makes the requested layer boundaries explicit; it should preserve endpoint behavior. The earlier architecture review found that `api.py` combines HTTP adaptation with Job policy, `jobs.py` owns several persistence and filesystem lifecycle concerns, and upload handling obtains a lease capability by constructing another store.
 
 The approved verification seam is the existing public HTTP and CLI workflow with fake inference and real SQLite/filesystem behavior, followed by the single approved local Formal Words run. The owner approved this seam and the five-ticket dependency breakdown before publication.
+
+## Acceptance status (2026-10-25)
+
+The project owner approved all 87 Formal Words reference cues and the saved local API transcript/subtitle timing after review. The existing API result was rescored offline under the documented policy without inference; acceptance is limited to this recording and saved result, and no additional CER/WER threshold or generalization claim was introduced. The transcript has no embedded source hash; the explicit operator binding and matching stored job input hash corroborate the approved source. The connected GitHub integration rejected writes with `403 Resource not accessible by integration`; the authenticated gh CLI updated and closed issues #1 and #6, and readback confirmed both are closed.

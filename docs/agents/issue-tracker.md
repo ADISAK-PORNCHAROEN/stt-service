@@ -12,7 +12,9 @@ The owner approved the feature-scoped REST layers and the local-first scope on 2
 | [#3](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/3) | Job status and service health through REST layers | #2 | Complete | Done |
 | [#4](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/4) | Complete result downloads through REST layers | #2 | Complete | Done |
 | [#5](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/5) | Worker and shared-caller migration | #2, #3, #4 | Complete | Done |
-| [#6](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/6) | Local Formal Words CPU/API acceptance | Reference review | Blocked — reference review pending | No; 87-cue text/timing review remains unverified |
+| [#6](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/6) | Local Formal Words CPU/API acceptance | None | Complete — accepted and closed 2026-10-25 | Done |
+
+On 2026-10-25, the project owner approved all 87 Formal Words reference cues and the saved API transcript/subtitle timing. The saved result was rescored offline without inference under the existing policy; no new CER/WER acceptance threshold was introduced. Private evidence remains outside GitHub and Git. The GitHub app integration returned `403 Resource not accessible by integration`; the authenticated gh CLI updated and closed issues #6 and #1, and readback confirmed both are closed.
 
 This milestone supersedes the older CPU optimization/homelab acceptance plan for current work. The two-recording homelab run, CPU-profile comparisons, batching, and language/hint experiments are not active requirements here. See the historical optimization records below for their original evidence and limitations.
 
