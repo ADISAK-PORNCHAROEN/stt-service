@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from stt_services.api.app import create_app
+from stt_services.api.dto.transcript_dto import TranscriptUpdateDTO
 from stt_services.domain.transcript_entities import EngineResult, Segment
 from stt_services.infrastructure.sqlite_job_repository import SQLiteJobRepository
 from stt_services.workers.job_worker import Worker
@@ -67,7 +68,8 @@ def test_openapi_describes_model_selection_and_transcript_edits(settings):
     update_schema = schema["paths"]["/jobs/{job_id}/transcript"]["put"]["requestBody"]["content"][
         "application/json"
     ]["schema"]
-    assert update_schema["properties"]["segments"]["items"]["required"] == ["id", "text"]
+    assert update_schema == TranscriptUpdateDTO.model_json_schema()
+    assert update_schema["$defs"]["TranscriptSegmentEditDTO"]["required"] == ["id", "text"]
     format_parameter = next(
         parameter
         for parameter in schema["paths"]["/jobs/{job_id}/result"]["get"]["parameters"]

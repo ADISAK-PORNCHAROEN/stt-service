@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 
 from stt_services.api.controllers.jobs_controller import JobsController
 from stt_services.api.dto.jobs_dto import JobAcceptedDTO, JobStatusDTO
-from stt_services.api.dto.transcript_dto import TranscriptSavedDTO
+from stt_services.api.dto.transcript_dto import TranscriptSavedDTO, TranscriptUpdateDTO
 from stt_services.application.jobs_service import ResultFormat
 
 
@@ -59,27 +59,7 @@ def create_jobs_router(controller: JobsController) -> APIRouter:
             "requestBody": {
                 "required": True,
                 "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "required": ["segments"],
-                            "properties": {
-                                "segments": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "required": ["id", "text"],
-                                        "properties": {
-                                            "id": {"type": "integer"},
-                                            "text": {"type": "string"},
-                                        },
-                                        "additionalProperties": False,
-                                    },
-                                }
-                            },
-                            "additionalProperties": False,
-                        }
-                    }
+                    "application/json": {"schema": TranscriptUpdateDTO.model_json_schema()}
                 },
             }
         },
