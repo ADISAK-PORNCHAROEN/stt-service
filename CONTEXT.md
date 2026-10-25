@@ -20,6 +20,22 @@ _Avoid_: Source, permanent archive
 The canonical account of recognized text and its ordered timed segments for one recording.
 _Avoid_: Subtitle file, export
 
+**Original transcript**:
+The immutable transcript first produced by ASR before a reviewer edits segment text.
+_Avoid_: Latest transcript, reviewed transcript
+
+**Reviewed transcript**:
+The latest saved version of a transcript after a reviewer changes segment text; timing and segment structure remain those of the original.
+_Avoid_: New inference result, edit history
+
+**Engine**:
+The inference adapter and runtime integration that runs a family of speech-recognition models, such as the faster-whisper adapter.
+_Avoid_: Model, model variant
+
+**Model**:
+The selected Whisper weights and model variant used for one job, such as Turbo or large-v3.
+_Avoid_: Engine, inference adapter
+
 **Reviewed reference**:
 Text checked by a human against a recording and used to assess transcription errors for that recording.
 _Avoid_: Unreviewed model output, assumed ground truth

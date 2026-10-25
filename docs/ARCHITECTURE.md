@@ -11,7 +11,7 @@
 | Transcript contract and export | `src/stt_services/domain/transcript_entities.py`, `transcription/transcript_exporter.py` | Engine-independent transcript types, canonical JSON, and deterministic TXT/SRT derivation |
 | HTTP application | `src/stt_services/api/app.py` | Construct FastAPI services, configure middleware and error mapping, and register routers |
 | HTTP routes, controllers, and DTOs | `src/stt_services/api/routes/`, `api/controllers/`, `api/dto/` | Register endpoint/OpenAPI metadata, adapt HTTP input/output, and define public payloads |
-| Job application layer | `src/stt_services/application/jobs_service.py`, `job_repository.py`, `job_policy.py`, `domain/job_entity.py` | Apply job and result policy through typed entities and a persistence contract |
+| Job application layer | `src/stt_services/application/jobs_service.py`, `job_repository.py`, `job_policy.py`, `domain/job_entity.py` | Apply job, per-job model, result, and transcript-review policy through typed entities and a persistence contract |
 | SQLite/filesystem adapter | `src/stt_services/infrastructure/sqlite_job_repository.py` | Implement durable admission, claim, lifecycle, retention, lease, and recovery operations |
 | Persistent worker | `src/stt_services/workers/job_worker.py` | Own singleton startup/recovery, one loaded model, sequential jobs, heartbeat, and cleanup |
 | Evaluation and comparisons | `src/stt_services/evaluation/` | Guard allowlisted recording evaluation, offline scoring, and immutable comparison artifacts |
@@ -22,7 +22,7 @@ FastAPI routes call controllers, which translate HTTP data and errors while usin
 
 ## Data flow
 
-CLI and API paths validate media before inference and call the shared pipeline. The pipeline produces canonical transcript data, derives text/subtitles, writes to staging, and publishes a complete bundle atomically on the destination filesystem. The service stores queued job metadata in SQLite and service-owned files under its managed jobs directory; a separate worker claims work and marks success only after publication. CLI destinations remain caller-owned and are not part of managed retention.
+CLI and API paths validate media before inference and call the shared pipeline. The pipeline produces canonical transcript data, derives text/subtitles, writes to staging, and publishes a complete original bundle atomically on the destination filesystem. Each service Job stores its selected Whisper model in SQLite; one worker releases its current engine before loading a different model and reuses a matching one across jobs. After success, a transcript edit validates the full segment-ID set under the result lease and atomically replaces one latest JSON file. TXT/SRT downloads are derived from that JSON, while `original-json` reads the immutable original. CLI destinations remain caller-owned and are not part of managed retention.
 
 ## Sources of truth
 

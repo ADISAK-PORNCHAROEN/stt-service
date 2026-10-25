@@ -9,7 +9,7 @@ from python_multipart import MultipartParser
 from python_multipart.multipart import parse_options_header
 
 from stt_services.application.job_repository import JobRepository, Lease
-from stt_services.config import Settings
+from stt_services.config import SUPPORTED_JOB_MODELS, Settings
 from stt_services.media.audio_inspector import SUPPORTED_SUFFIXES
 
 
@@ -19,6 +19,7 @@ class StagedUpload:
     suffix: str
     directory: Path
     lease: Lease
+    model: str | None = None
     closed: bool = False
 
     @property
@@ -65,12 +66,20 @@ async def receive_upload(
     field = bytearray()
     value = bytearray()
     header_bytes = 0
+    current_part: str | None = None
+    model_bytes = bytearray()
+    received_file = False
+    received_model = False
 
     def part_begin() -> None:
-        nonlocal parts
+        nonlocal parts, header_bytes
         parts += 1
-        if parts > 1:
-            raise HTTPException(400, "Exactly one file field is required")
+        if parts > 2:
+            raise HTTPException(400, "Expected one file and at most one model field")
+        headers.clear()
+        field.clear()
+        value.clear()
+        header_bytes = 0
 
     def header_field(data: bytes, start: int, end: int) -> None:
         field.extend(data[start:end])
@@ -92,24 +101,45 @@ async def receive_upload(
         value.clear()
 
     def headers_finished() -> None:
-        nonlocal stream, suffix
+        nonlocal stream, suffix, current_part, received_file, received_model
         disposition, params = parse_options_header(headers.get(b"content-disposition", b""))
-        if disposition != b"form-data" or params.get(b"name") != b"file":
-            raise HTTPException(400, "Expected a file field named file")
-        filename = params.get(b"filename", b"").decode("utf-8", errors="replace")
-        suffix = Path(filename).suffix.lower()
-        if suffix not in SUPPORTED_SUFFIXES:
-            raise HTTPException(415, "Supported formats: WAV, MP3, M4A, FLAC, MP4")
-        stream = (directory / f"input{suffix}").open("xb")
+        if disposition != b"form-data":
+            raise HTTPException(400, "Expected multipart form-data fields")
+        name = params.get(b"name")
+        if name == b"file":
+            if received_file or b"filename" not in params:
+                raise HTTPException(400, "Exactly one file field is required")
+            filename = params[b"filename"].decode("utf-8", errors="replace")
+            suffix = Path(filename).suffix.lower()
+            if suffix not in SUPPORTED_SUFFIXES:
+                raise HTTPException(415, "Supported formats: WAV, MP3, M4A, FLAC, MP4")
+            stream = (directory / f"input{suffix}").open("xb")
+            received_file = True
+            current_part = "file"
+        elif name == b"model":
+            if received_model or b"filename" in params:
+                raise HTTPException(400, "Model must be a single text field")
+            received_model = True
+            current_part = "model"
+        else:
+            raise HTTPException(400, "Expected a file field and optional model field")
 
     def part_data(data: bytes, start: int, end: int) -> None:
         nonlocal size
-        size += end - start
-        if size > settings.max_bytes:
-            raise HTTPException(413, "File exceeds the size limit")
-        if stream is None:
-            raise HTTPException(400, "Missing file headers")
-        stream.write(data[start:end])
+        chunk = data[start:end]
+        if current_part == "file":
+            size += len(chunk)
+            if size > settings.max_bytes:
+                raise HTTPException(413, "File exceeds the size limit")
+            if stream is None:
+                raise HTTPException(400, "Missing file headers")
+            stream.write(chunk)
+        elif current_part == "model":
+            if len(model_bytes) + len(chunk) > 64:
+                raise HTTPException(422, "Model must be turbo or large-v3")
+            model_bytes.extend(chunk)
+        else:
+            raise HTTPException(400, "Missing multipart field headers")
 
     def end() -> None:
         nonlocal complete
@@ -134,12 +164,20 @@ async def receive_upload(
                 raise HTTPException(413, "Request exceeds the upload size limit")
             parser.write(chunk)
         parser.finalize()
-        if not complete or stream is None:
+        if not complete or stream is None or not received_file:
             raise HTTPException(400, "Incomplete file upload")
         if not size:
             raise HTTPException(422, "Empty audio file")
+        model: str | None = None
+        if received_model:
+            try:
+                model = model_bytes.decode("utf-8", errors="strict")
+            except UnicodeDecodeError as exc:
+                raise HTTPException(422, "Model must be turbo or large-v3") from exc
+            if model not in SUPPORTED_JOB_MODELS:
+                raise HTTPException(422, "Model must be turbo or large-v3")
         stream.close()
-        return StagedUpload(job_id, suffix, directory, lease)
+        return StagedUpload(job_id, suffix, directory, lease, model)
     except BaseException:
         if stream:
             stream.close()

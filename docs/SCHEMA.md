@@ -10,10 +10,10 @@
 
 | Table | Fields/invariants | Purpose and lifecycle |
 | --- | --- | --- |
-| `jobs` | `id`, `status`, `suffix`, `created_at`, `started_at`, `finished_at`, `error`, `progress_percent`; index on `(status, created_at)`. Status transitions are queued → running → succeeded/failed; recovery converts prior running jobs to failed/interrupted. Progress is an integer, 0 for queued, capped at 99 while running, and 100 only after publication and success commit. | Durable queue and safe client-visible status; IDs are generated 32-character lowercase hex. Queue admission and FIFO claim use transactions. No automatic retry. |
+| `jobs` | `id`, `status`, `suffix`, `created_at`, `started_at`, `finished_at`, `error`, `progress_percent`, nullable `model`; index on `(status, created_at)`. Status transitions are queued → running → succeeded/failed; recovery converts prior running jobs to failed/interrupted. Progress is an integer, 0 for queued, capped at 99 while running, and 100 only after publication and success commit. | Durable queue and safe client-visible status; IDs are generated 32-character lowercase hex. New rows snapshot the requested model or configured `STT_MODEL`; legacy NULL rows resolve to the current configured default. Queue admission and FIFO claim use transactions. No automatic retry. |
 | `worker` | Singleton row with owner, heartbeat, and status. | Worker readiness/ownership. An OS-backed `worker.lock` prevents concurrent workers for the same data directory; heartbeat remains independent of slow inference and cleanup. |
 
-Service files live under `jobs/<job_id>/input.<extension>` and `jobs/<job_id>/result/`; upload and result staging are private sibling directories. Fixed lock buckets and `worker.lock` are filesystem coordination markers, not relational entities. SQLite and filesystem publication are coordinated by ordering and recovery, not one cross-resource transaction.
+Service files live under `jobs/<job_id>/input.<extension>` and `jobs/<job_id>/result/`; upload and result staging are private sibling directories. The original `transcript.json`, TXT, and SRT bundle remains immutable. A text review writes one `transcript.latest.json` beside it using same-volume atomic replacement while holding the result lease; TXT/SRT requests derive from this one latest JSON. No earlier edit is retained. Fixed lock buckets and `worker.lock` are filesystem coordination markers, not relational entities. SQLite and filesystem publication are coordinated by ordering and recovery, not one cross-resource transaction.
 
 ## Retention and migrations
 
@@ -21,6 +21,6 @@ Service files live under `jobs/<job_id>/input.<extension>` and `jobs/<job_id>/re
 - Failed inputs, artifacts, and status expire after 24 hours.
 - Queued/running jobs and active downloads are excluded from cleanup; filesystem failures are retried on a later sweep.
 - CLI sources/results, caches, environment files, and external references are outside managed cleanup.
-- Schema upgrades run transactionally and preserve existing jobs. The progress migration initializes old succeeded rows to 100 and other old rows to 0 because prior progress was not recorded.
+- Schema upgrades run transactionally and preserve existing jobs. The progress migration initializes old succeeded rows to 100 and other old rows to 0 because prior progress was not recorded. The model migration leaves legacy models NULL so runtime reads use the current configured `STT_MODEL`.
 
 The MVP architecture/spec and the implementation in `infrastructure/sqlite_job_repository.py`, `workers/job_worker.py`, and `config.py` own details. For a schema change, document migration/rollback behavior, update the upgrade tests, preserve old jobs unless an accepted decision says otherwise, and verify cleanup against an isolated data directory. Never point cleanup or test fixtures at production/user data.

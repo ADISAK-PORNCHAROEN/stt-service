@@ -1,3 +1,4 @@
+import gc
 import json
 import math
 import platform
@@ -61,13 +62,26 @@ class Pipeline:
         self.engine_factory = engine_factory
         self.engine: Engine | None = None
         self.profile = settings.resolve_profile()
+        self.model_load_peak_ram_bytes = 0
 
     def load(self) -> float:
         if self.engine is not None:
             return 0
         started = time.perf_counter()
-        self.engine = self.engine_factory(self.settings)
+        with MemorySampler() as sampler:
+            self.engine = self.engine_factory(self.settings)
+        self.model_load_peak_ram_bytes = sampler.peak
         return time.perf_counter() - started
+
+    def unload(self) -> None:
+        engine = self.engine
+        self.engine = None
+        if engine is not None:
+            close = getattr(engine, "close", None)
+            if callable(close):
+                close()
+        del engine
+        gc.collect()
 
     def run(
         self,
@@ -77,8 +91,9 @@ class Pipeline:
         source_guard: Callable[[], None] | None = None,
         source_sha256: str | None = None,
         on_progress: Callable[[int], None] | None = None,
+        model_load_seconds: float = 0,
     ) -> Transcript:
-        started = time.perf_counter()
+        started = time.perf_counter() - model_load_seconds
         if output_dir.exists():
             raise ValueError("Output directory already exists; choose a new directory")
         if source_guard:
@@ -91,7 +106,7 @@ class Pipeline:
         metrics = RunMetrics()
         metrics.validation_seconds = time.perf_counter() - validation_started
         with MemorySampler() as sampler:
-            metrics.model_load_seconds = self.load()
+            metrics.model_load_seconds = self.load() + model_load_seconds
             assert self.engine is not None
             if source_guard:
                 source_guard()
@@ -169,7 +184,7 @@ class Pipeline:
                 metrics.rtfx_inference = audio.duration_seconds / max(
                     metrics.inference_seconds, 1e-9
                 )
-                metrics.peak_ram_bytes = sampler.peak
+                metrics.peak_ram_bytes = max(sampler.peak, self.model_load_peak_ram_bytes)
                 (staging / "transcript.json").write_text(
                     json.dumps(result.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
                 )

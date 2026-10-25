@@ -10,6 +10,7 @@ class HealthDTO(BaseModel):
     api: str
     worker: str
     model_ready: bool
+    default_model: str
     heartbeat_at: float | None
     heartbeat_age_seconds: float | None
 
@@ -20,6 +21,7 @@ class HealthDTO(BaseModel):
             api="ready",
             worker=health.worker,
             model_ready=health.model_ready,
+            default_model=health.default_model,
             heartbeat_at=health.heartbeat_at,
             heartbeat_age_seconds=health.heartbeat_age_seconds,
         )

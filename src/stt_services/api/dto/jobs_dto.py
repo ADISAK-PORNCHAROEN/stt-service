@@ -22,6 +22,7 @@ class JobStatusDTO(BaseModel):
     updated_at: float
     error: JobFailure | None
     error_message: str | None
+    model: str
 
     @classmethod
     def from_entity(cls, job: Job) -> "JobStatusDTO":
@@ -42,8 +43,13 @@ class JobStatusDTO(BaseModel):
                     JobFailure.PROCESSING_FAILED: (
                         "Transcription failed; check worker logs and submit a new job"
                     ),
+                    JobFailure.MODEL_LOAD_FAILED: (
+                        f"The requested Whisper model '{job.model}' could not be loaded; "
+                        "check worker logs and submit a new job"
+                    ),
                 }.get(job.error)
                 if job.error is not None
                 else None
             ),
+            model=job.model,
         )

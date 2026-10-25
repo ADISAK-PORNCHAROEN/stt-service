@@ -47,6 +47,10 @@ class WhisperEngine:
 
             self.batched_model = BatchedInferencePipeline(model=self.model)
 
+    def close(self) -> None:
+        self.batched_model = None
+        self.model = None
+
     def _validate_cuda_runtime(self) -> dict[str, object]:
         try:
             import ctranslate2  # type: ignore[import-untyped]
