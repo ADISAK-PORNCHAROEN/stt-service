@@ -2,6 +2,18 @@
 
 This file records completed local MVP work and links the current owner-approved GitHub backlog. Read the [specification](../../.scratch/stt-mvp/spec.md), [architecture](../../.scratch/stt-mvp/architecture.md), and [CONTEXT](../../CONTEXT.md) before changing behavior. Runtime implementation is present; delivery status below reflects actual evidence in the [verification report](../verification-20261017.md), not merely code existence.
 
+## Approved follow-up: Whisper model choice and transcript review
+
+The owner approved this service feature on 2026-10-25. The service [specification](../../.scratch/stt-transcript-review/spec.md) is [stt-service#10](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/10), supporting the product spec [frontend-stt#8](https://github.com/ADISAK-PORNCHAROEN/frontend-stt/issues/8).
+
+| Ticket | What to build | Blocked by | Status | Ready for agent |
+| --- | --- | --- | --- | --- |
+| [#11](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/11) | Persist and run a selected Whisper model per job | None | Complete — acceptance passed; PR merge pending | Done |
+| [#12](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/12) | Save edited transcript text and serve original/latest outputs | None | Complete — acceptance passed; PR merge pending | Done |
+
+Both service issues are service-only tickets; their acceptance evidence and local validation commands are recorded in the [#11 ticket](../../.scratch/stt-transcript-review/issues/01-select-whisper-model.md) and [#12 ticket](../../.scratch/stt-transcript-review/issues/02-review-edit-transcript.md). The aggregate real-model measurements are in the [Formal Words acceptance report](../formal-words-model-api-acceptance-20261026.md); raw bundles remain outside Git/GitHub. Frontend UI integration is tracked in [frontend-stt#9](https://github.com/ADISAK-PORNCHAROEN/frontend-stt/issues/9) (blocked by frontend-stt#5 and this repo's #11) and [frontend-stt#10](https://github.com/ADISAK-PORNCHAROEN/frontend-stt/issues/10) (blocked by frontend-stt#5 and this repo's #12). No homelab test or deployment is in scope.
+
+
 ## Current approved milestone: local REST layering and Formal Words acceptance
 
 The owner approved the feature-scoped REST layers and the local-first scope on 2026-10-24. The parent [specification](../../.scratch/stt-rest-api/spec.md) is [GitHub issue #1](https://github.com/ADISAK-PORNCHAROEN/stt-service/issues/1). The approved verification seam is the public HTTP/CLI behavior with fake inference and real SQLite/filesystem state, followed by one local CPU run using only the existing ignored Formal Words recording/reference pair. No reference text or media is included in the public issues.

@@ -1,7 +1,9 @@
 import hashlib
+import os
 import shutil
 import sqlite3
 import time
+import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -40,6 +42,10 @@ class SQLiteJobRepository:
                     "ALTER TABLE jobs ADD COLUMN progress_percent INTEGER NOT NULL DEFAULT 0"
                 )
                 db.execute("UPDATE jobs SET progress_percent=100 WHERE status='succeeded'")
+                columns.add("progress_percent")
+            if "model" not in columns:
+                # Keep legacy rows NULL so reads continue to use the current configured default.
+                db.execute("ALTER TABLE jobs ADD COLUMN model TEXT")
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
@@ -54,7 +60,7 @@ class SQLiteJobRepository:
         finally:
             db.close()
 
-    def enqueue(self, job_id: str, suffix: str, staging: Path) -> Job:
+    def enqueue(self, job_id: str, suffix: str, staging: Path, model: str) -> Job:
         destination = self.settings.jobs_dir / job_id
         moved = False
         created_at = time.time()
@@ -67,8 +73,8 @@ class SQLiteJobRepository:
                 staging.rename(destination)
                 moved = True
                 db.execute(
-                    "INSERT INTO jobs(id,status,suffix,created_at) VALUES(?,?,?,?)",
-                    (job_id, JobStatus.QUEUED.value, suffix, created_at),
+                    "INSERT INTO jobs(id,status,suffix,created_at,model) VALUES(?,?,?,?,?)",
+                    (job_id, JobStatus.QUEUED.value, suffix, created_at, model),
                 )
         except BaseException:
             if moved:
@@ -83,6 +89,7 @@ class SQLiteJobRepository:
             finished_at=None,
             error=None,
             progress_percent=0,
+            model=model,
         )
 
     def get(self, job_id: str) -> Job | None:
@@ -112,6 +119,7 @@ class SQLiteJobRepository:
                 finished_at=row["finished_at"],
                 error=JobFailure(row["error"]) if row["error"] else None,
                 progress_percent=row["progress_percent"],
+                model=row["model"] or self.settings.model,
             )
 
     def update_progress(self, job_id: str, percent: int) -> None:
@@ -171,6 +179,12 @@ class SQLiteJobRepository:
             if lease is None:
                 continue
             try:
+                result_dir = directory / "result"
+                if result_dir.is_dir():
+                    for temporary in result_dir.glob(".download-*"):
+                        self._remove(temporary)
+                    for temporary in result_dir.glob(".transcript-latest-*.tmp"):
+                        self._remove(temporary)
                 if age >= terminal_retention(JobStatus(row["status"])):
                     self._remove(directory)
                     with self.connect() as db:
@@ -215,6 +229,26 @@ class SQLiteJobRepository:
     def result_path(self, job_id: str, suffix: str) -> Path:
         return self.settings.jobs_dir / job_id / "result" / f"transcript.{suffix}"
 
+    def latest_transcript_path(self, job_id: str) -> Path:
+        return self.settings.jobs_dir / job_id / "result" / "transcript.latest.json"
+
+    def save_reviewed_transcript(self, job_id: str, content: bytes) -> None:
+        result_dir = self.settings.jobs_dir / job_id / "result"
+        if not result_dir.is_dir():
+            raise FileNotFoundError("Original result bundle is unavailable")
+        for abandoned in result_dir.glob(".transcript-latest-*.tmp"):
+            abandoned.unlink(missing_ok=True)
+        latest_path = self.latest_transcript_path(job_id)
+        staging_path = result_dir / f".transcript-latest-{uuid.uuid4().hex}.tmp"
+        try:
+            with staging_path.open("xb") as staged:
+                staged.write(content)
+                staged.flush()
+                os.fsync(staged.fileno())
+            os.replace(staging_path, latest_path)
+        finally:
+            staging_path.unlink(missing_ok=True)
+
     def _job(self, row: sqlite3.Row) -> Job:
         return Job(
             id=row["id"],
@@ -225,6 +259,7 @@ class SQLiteJobRepository:
             finished_at=row["finished_at"],
             error=JobFailure(row["error"]) if row["error"] else None,
             progress_percent=row["progress_percent"],
+            model=row["model"] or self.settings.model,
         )
 
     def _remove(self, path: Path) -> None:

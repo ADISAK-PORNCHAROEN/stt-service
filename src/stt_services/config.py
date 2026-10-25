@@ -9,6 +9,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+SUPPORTED_JOB_MODELS = frozenset({"turbo", "large-v3"})
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="STT_", extra="ignore", frozen=True)

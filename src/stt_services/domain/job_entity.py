@@ -12,6 +12,7 @@ class JobStatus(StrEnum):
 class JobFailure(StrEnum):
     INTERRUPTED = "interrupted"
     PROCESSING_FAILED = "processing_failed"
+    MODEL_LOAD_FAILED = "model_load_failed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +25,7 @@ class Job:
     finished_at: float | None
     error: JobFailure | None
     progress_percent: int
+    model: str = "turbo"
 
     @property
     def updated_at(self) -> float:
@@ -43,3 +45,4 @@ class WorkerHealth:
     model_ready: bool
     heartbeat_at: float | None
     heartbeat_age_seconds: float | None
+    default_model: str = "turbo"

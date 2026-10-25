@@ -286,18 +286,21 @@ def test_health_becomes_unready_at_stale_heartbeat_boundary(settings, engine_fac
             assert stale.json()["worker"] == "unavailable"
 
 
-def test_loading_failure_never_reports_worker_ready(settings):
+def test_loading_failure_never_reports_worker_ready(settings, wav_bytes):
     def unavailable(config):
         raise RuntimeError("model unavailable")
 
     with TestClient(create_app(settings)) as client:
-        with pytest.raises(RuntimeError, match="model unavailable"):
-            with Worker(settings, unavailable):
-                pytest.fail("Worker became ready without a model")
+        job_id = submit(client, wav_bytes)
+        with Worker(settings, unavailable) as worker:
+            assert client.get("/health").status_code == 503
+            assert client.get("/health").json()["ready"] is False
+            assert worker.run_once()
         health = client.get("/health")
         assert health.status_code == 503
         assert health.json()["api"] == "ready"
         assert health.json()["ready"] is False
+        assert state(client, job_id)["error"] == "model_load_failed"
 
 
 def test_success_retention_exact_boundaries_preserve_cli_artifacts(

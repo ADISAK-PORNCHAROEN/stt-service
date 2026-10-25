@@ -7,7 +7,10 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.responses import Response
 
 from stt_services.api.controllers.health_controller import HealthController
-from stt_services.api.controllers.jobs_controller import JobsController
+from stt_services.api.controllers.jobs_controller import (
+    MAX_TRANSCRIPT_EDIT_BYTES,
+    JobsController,
+)
 from stt_services.api.routes.health_routes import create_health_router
 from stt_services.api.routes.jobs_routes import create_jobs_router
 from stt_services.application.jobs_service import JobService
@@ -56,13 +59,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             f"https://{request.headers.get('host')}",
         }:
             return error_response(403, "Cross-origin requests are not allowed")
-        if request.method == "POST":
+        if request.method in {"POST", "PUT"}:
             length = request.headers.get("content-length")
             if length:
                 try:
                     if int(length) < 0:
                         raise ValueError
-                    if int(length) > settings.max_bytes + 65536:
+                    limit = (
+                        settings.max_bytes + 65536
+                        if request.method == "POST"
+                        else MAX_TRANSCRIPT_EDIT_BYTES
+                    )
+                    if int(length) > limit:
                         return error_response(413, "Request too large")
                 except ValueError:
                     return error_response(400, "Invalid Content-Length")
