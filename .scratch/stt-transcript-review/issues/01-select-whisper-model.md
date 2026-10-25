@@ -34,10 +34,10 @@ None (can start immediately).
 
 ## Validation evidence
 
-- Test revision: `00fa280bffb00ba04e92296ad8861aa2916817e9`; the working tree was clean during the final verification run.
+- Test revision: `43d55de28f0e15f0e360e1d24c2a906fd67568f7`; the working tree was clean during the final verification run.
 - `uv run --env-file .env.local -- python -m pytest` — 154 passed, 2 deselected.
 - `uv run --env-file .env.local ruff check .` — passed.
 - `uv run --env-file .env.local ruff format --check .` — passed (260 files).
 - `uv run --env-file .env.local -- python -m mypy` — passed (41 source files).
-- Real API and existing-policy score summary: [Formal Words model API acceptance](../../../docs/formal-words-model-api-acceptance-20261026.md). The run used the feature implementation snapshot based on `d648ce9`, later committed as `9494cfb`; `00fa280` only changes how OpenAPI derives the transcript request schema. Private run bundles and raw results remain outside Git/GitHub.
+- Real API and existing-policy score summary: [Formal Words model API acceptance](../../../docs/formal-words-model-api-acceptance-20261026.md). The run used the feature implementation snapshot based on `d648ce9`, later committed as `9494cfb`; `00fa280` and `43d55de` only register the transcript request schema in OpenAPI components. Private run bundles and raw results remain outside Git/GitHub.
 - Output transcript important-error and timing review remain pending; scores are measurements only, with no newly defined threshold.
